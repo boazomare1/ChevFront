@@ -148,7 +148,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
   }
 
   Widget _buildCustomerCard(Stop stop) {
-    const placeholderAsset = 'assets/static_shop.png';
+    const placeholderAsset = 'assets/gas-cylinder.png';
 
     // compute distance
     String distanceLabel = '—';
