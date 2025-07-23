@@ -1,8 +1,7 @@
 import 'package:chevenergies/models/stop.dart';
-import 'package:chevenergies/shared utils/widgets.dart';
-import 'package:chevenergies/models/routedata.dart';
 import 'package:chevenergies/shared utils/extension.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
 
@@ -18,30 +17,35 @@ class _CustomersScreenState extends State<CustomersScreen> {
   List<Stop> _stops = [];
   bool _isLoading = false;
   String? _error;
+  Position? _currentPosition;
 
   @override
   void initState() {
     super.initState();
-    _loadStops();
+    _initLocationAndData();
   }
 
-  Future<void> _loadStops() async {
+  Future<void> _initLocationAndData() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
+
     try {
-      // 1) fetch all routes for the day
-      final routes = await Provider.of<AppState>(context, listen: false)
-          .getRoutes(widget.day);
-      // 2) flatten all stops across routes
-      _stops = routes
-          .expand<Stop>((r) => r.stops) // StopData is your model for each stop
-          .toList();
+      // permissions + position
+      await _handlePermissions();
+      _currentPosition = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+      );
+
+      // load stops
+      final routes = await Provider.of<AppState>(
+        context,
+        listen: false,
+      ).getRoutes(widget.day);
+      _stops = routes.expand((r) => r.stops).toList();
     } catch (e) {
-      setState(() {
-        _error = 'Failed to load customers: $e';
-      });
+      _error = 'Failed to load customers: $e';
     } finally {
       setState(() {
         _isLoading = false;
@@ -49,74 +53,222 @@ class _CustomersScreenState extends State<CustomersScreen> {
     }
   }
 
+  Future<void> _handlePermissions() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      await Geolocator.openLocationSettings();
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw Exception('Location services are disabled');
+      }
+    }
+    var perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.denied) {
+      perm = await Geolocator.requestPermission();
+    }
+    if (perm == LocationPermission.denied ||
+        perm == LocationPermission.deniedForever) {
+      throw Exception('Location permissions are denied');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Customers for ${widget.day.capitalize()}'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            if (_isLoading)
-              const Center(child: CircularProgressIndicator()),
-            if (_error != null)
-              Text(_error!, style: const TextStyle(color: Colors.red)),
-            if (!_isLoading && _error == null)
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _stops.length,
-                  itemBuilder: (ctx, i) {
-                    final stop = _stops[i];
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      child: InkWell(
-                        onTap: () {
-                          // TODO: handle tap
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.person, size: 40),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      stop.shop,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${stop.customer} • ${stop.townName}',
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Distance: — km', // placeholder
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey),
-                                    ),
-                                  ],
+      // no AppBar
+      body: Column(
+        children: [
+          // Green top stripe
+          Container(height: 60, color: const Color(0xFF228B22)),
+          const SizedBox(height: 10),
+
+          // Title + underline
+          Center(
+            child: Column(
+              children: [
+                const Text(
+                  'CUSTOMERS',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Container(width: 70, height: 2, color: Colors.black),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Content
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _initLocationAndData,
+              color: Colors.red,
+              child:
+                  _error != null
+                      ? Center(
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      )
+                      : Stack(
+                        children: [
+                          ListView.builder(
+                            padding: const EdgeInsets.only(bottom: 100),
+                            itemCount: _stops.length,
+                            itemBuilder:
+                                (ctx, i) => _buildCustomerCard(_stops[i]),
+                          ),
+                          if (_isLoading)
+                            Positioned(
+                              top: 10,
+                              right: 10,
+                              child: SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.red,
                                 ),
                               ),
-                              const Icon(Icons.arrow_forward_ios, size: 16),
-                            ],
-                          ),
-                        ),
+                            ),
+                        ],
                       ),
-                    );
-                  },
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO: navigate to Add Customer screen
+        },
+        backgroundColor: const Color(0xFF228B22),
+        child: const Icon(Icons.add, size: 30),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
+  Widget _buildCustomerCard(Stop stop) {
+    const placeholderAsset = 'assets/static_shop.png';
+
+    // compute distance
+    String distanceLabel = '—';
+    if (_currentPosition != null) {
+      final km = haversineDistanceKm(
+        lat1: _currentPosition!.latitude,
+        lng1: _currentPosition!.longitude,
+        lat2: stop.latitude,
+        lng2: stop.longitude,
+      );
+      distanceLabel = km.toStringAsFixed(1);
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      child: InkWell(
+        onTap: () {},
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // fixed-size image slot
+              SizedBox(
+                width: 60,
+                height: 60,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(placeholderAsset, fit: BoxFit.cover),
                 ),
               ),
-          ],
+              const SizedBox(width: 12),
+
+              // indicator rail
+              Column(
+                children: [
+                  const Icon(Icons.circle, size: 6, color: Colors.blue),
+                  Container(
+                    width: 1,
+                    height: 24,
+                    color: Colors.black,
+                    margin: const EdgeInsets.symmetric(vertical: 3),
+                  ),
+                  Container(
+                    width: 3,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.pinkAccent,
+                      borderRadius: BorderRadius.circular(1.5),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+
+              // main info + phone/button
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // shop + distance uppercase & bold
+                    Text(
+                      '${stop.shop.toUpperCase()} (${distanceLabel} KM)',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    // town only uppercase
+                    Text(
+                      stop.townName.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    // phone + Next button
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            stop.phone,
+                            style: const TextStyle(fontSize: 14),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.pinkAccent,
+                            minimumSize: const Size(64, 32),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'NEXT',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

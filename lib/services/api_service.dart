@@ -3,8 +3,9 @@ import 'dart:convert';
 import 'package:chevenergies/models/item.dart' show Item;
 import 'package:chevenergies/models/routedata.dart';
 import 'package:chevenergies/models/user.dart';
+import 'package:chevenergies/shared%20utils/extension.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:geolocator/geolocator.dart';
 class ApiService {
   final String baseUrl = 'https://chevenergies.techsavanna.technology/api/method';
   String? token;
@@ -133,5 +134,47 @@ class ApiService {
       throw Exception('Failed to process payment: ${response.body}');
     }
   }
+
+  Future<Position> _determinePosition() async {
+  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    await Geolocator.openLocationSettings();
+    throw Exception('Location services are disabled.');
+  }
+
+  LocationPermission permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      throw Exception('Location permissions are denied');
+    }
+  }
+  if (permission == LocationPermission.deniedForever) {
+    throw Exception(
+        'Location permissions are permanently denied. We cannot request permissions.');
+  }
+
+  return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.best);
+}
+Future<double> distanceToTarget() async {
+  // 1. Get current user position
+  final pos = await _determinePosition();
+
+  // 2. Define your target coordinates
+  const targetLat = 0.592252;
+  const targetLng = 34.771343;
+
+  // 3. Compute distance
+  final distanceKm = haversineDistanceKm(
+    lat1: pos.latitude,
+    lng1: pos.longitude,
+    lat2: targetLat,
+    lng2: targetLng,
+  );
+
+  return distanceKm;
+}
+
 }
 

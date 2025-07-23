@@ -9,6 +9,7 @@ import 'package:chevenergies/services/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     ChangeNotifierProvider(
       create: (context) => AppState(),
