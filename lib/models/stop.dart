@@ -26,4 +26,21 @@ class Stop {
     required this.email,
     required this.logo,
   });
+
+  factory Stop.fromJson(Map<String, dynamic> json) {
+    return Stop(
+      idx: json['idx'] as int,
+      name: json['name'] as String,
+      shop: json['shop'] as String,
+      active: json['active'] as int,
+      customer: json['customer'] as String,
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      countyName: json['county_name'] as String,
+      townName: json['town_name'] as String,
+      phone: json['phone'] as String,
+      email: json['email'] as String,
+      logo: json['logo'] as String,
+    );
+  }
 }

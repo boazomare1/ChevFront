@@ -1,4 +1,4 @@
-import 'package:chevenergies/shared utils/widgets.dart';
+import 'package:chevenergies/screens/makesale.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
@@ -20,23 +20,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       body: SingleChildScrollView(
         child: Container(
-          color: Colors.white, // overall background
+          color: Colors.white,
           child: Column(
             children: [
-              // matching the LoginScreen’s green top stripe
+              // Green top stripe
               Container(
                 height: 60,
                 color: const Color(0xFF228B22),
               ),
 
-              // give some space before content
               const SizedBox(height: 10),
+
+              // Title card
               Card(
                 elevation: 3,
                 margin: const EdgeInsets.symmetric(horizontal: 25, vertical: 5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6)),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 15, horizontal: 20),
                   child: Column(
                     children: const [
                       Text(
@@ -56,7 +59,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                       SizedBox(height: 10),
-                      Divider(color: Colors.black, indent: 30, endIndent: 30, thickness: 1),
+                      Divider(
+                        color: Colors.black,
+                        indent: 30,
+                        endIndent: 30,
+                        thickness: 1,
+                      ),
                     ],
                   ),
                 ),
@@ -83,59 +91,138 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<Widget> _buildFeatureTiles(BuildContext context) {
-    final features = [
-     {'label': 'New Sale', 'icon': 'assets/hot-sale.png'},
-      {'label': 'Sale History', 'icon': 'assets/financial.png'},
-      {'label': 'Sales Summary', 'icon': 'assets/bill.png'},
-      {'label': 'Stock', 'icon': 'assets/money.png'},
-      {'label': 'Discount Sales', 'icon': 'assets/sales.png'},
-      {'label': 'Invoice Sales', 'icon': 'assets/offer.png'},
-      {'label': 'Cheque Sales', 'icon': 'assets/cheque.png'},
-      {'label': 'Expenditure', 'icon': 'assets/sale-badge.png'},
-      {'label': 'Account', 'icon': 'assets/user.png'},
+    // Typed data class eliminates Object->String errors
+    final features = <_Feature>[
+      _Feature(
+        label: 'New Sale',
+        iconPath: 'assets/hot-sale.png',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NewSaleScreen()),
+          );
+        },
+      ),
+      _Feature(
+        label: 'Sale History',
+        iconPath: 'assets/sale-badge.png',
+        onTap: () {
+          // TODO: push Sale History
+        },
+      ),
+      _Feature(
+        label: 'Sales Summary',
+        iconPath: 'assets/sales.png',
+        onTap: () {
+          // TODO: push Sales Summary
+        },
+      ),
+      _Feature(
+        label: 'Stock',
+        iconPath: 'assets/money.png',
+        onTap: () {
+          // TODO: push Stock
+        },
+      ),
+      _Feature(
+        label: 'Discount Sales',
+        iconPath: 'assets/offer.png',
+        onTap: () {
+          // TODO: push Discount Sales
+        },
+      ),
+      _Feature(
+        label: 'Invoice Sales',
+        iconPath: 'assets/bill.png',
+        onTap: () {
+          // TODO: push Invoice Sales
+        },
+      ),
+      _Feature(
+        label: 'Cheque Sales',
+        iconPath: 'assets/cheque.png',
+        onTap: () {
+          // TODO: push Cheque Sales
+        },
+      ),
+      _Feature(
+        label: 'Expenditure',
+        iconPath: 'assets/financial.png',
+        onTap: () {
+          // TODO: push Expenditure
+        },
+      ),
+      _Feature(
+        label: 'Account',
+        iconPath: 'assets/user.png',
+        onTap: () {
+          // TODO: push Account
+        },
+      ),
+      // Blank placeholder -> keeps wrap even
+      const _Feature(label: '', iconPath: '', onTap: null),
     ];
 
-    // Add one blank to keep an even count
-    features.add({'label': '', 'icon': ''});
-
-    return features.map((item) {
-      final isBlank = item['label']!.isEmpty;
+    return features.map((feature) {
+      if (feature.label.isEmpty) {
+        return SizedBox(
+          width: MediaQuery.of(context).size.width / 2 - 20,
+          height: 150,
+        );
+      }
       return SizedBox(
         width: MediaQuery.of(context).size.width / 2 - 20,
         height: 150,
-        child: isBlank
-            ? const SizedBox.shrink()
-            : Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                child: InkWell(
-                  onTap: () {
-                    // TODO: handle each feature tap
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(item['icon']!, width: 50, height: 50),
-                      const SizedBox(height: 10),
-                      Text(
-                        item['label']!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          letterSpacing: 0.1,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black26,
-                              offset: Offset(0, 6),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
+        child: Card(
+          elevation: 3,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: feature.onTap,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  feature.iconPath,
+                  width: 50,
+                  height: 50,
+                  errorBuilder: (ctx, e, st) =>
+                      const Icon(Icons.image_not_supported),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  feature.label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    letterSpacing: 0.1,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black26,
+                        offset: Offset(0, 6),
+                        blurRadius: 4,
                       ),
                     ],
                   ),
                 ),
-              ),
+              ],
+            ),
+          ),
+        ),
       );
     }).toList();
   }
+}
+
+// Strongly typed feature class
+class _Feature {
+  final String label;
+  final String iconPath;
+  final VoidCallback? onTap;
+
+  const _Feature({
+    required this.label,
+    required this.iconPath,
+    required this.onTap,
+  });
 }

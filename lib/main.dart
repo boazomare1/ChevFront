@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
                 return appState.user == null ? const LoginScreen() : const DashboardScreen();
               },
             ),
-        '/stops': (context) => StopsScreen(day: ModalRoute.of(context)!.settings.arguments as String),
+        '/stops': (context) => CustomersScreen(day: ModalRoute.of(context)!.settings.arguments as String),
         '/items': (context) => ItemsScreen(routeId: ModalRoute.of(context)!.settings.arguments as String),
         '/invoice': (context) => InvoiceScreen(
               routeId: ModalRoute.of(context)!.settings.arguments as String,

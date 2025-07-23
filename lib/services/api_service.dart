@@ -39,28 +39,30 @@ class ApiService {
   }
 
   Future<List<RouteData>> getRoutes(String day) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/route_plan.apis.route.get_salesman_routes_for_day'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({'day': day, 'route_id': 'KDQ 154P'}),
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return (data['message'] as List)
-          .map((item) => RouteData(
-                routeId: item['route_id'],
-                vehicle: item['vehicle'] ?? '',
-                warehouse: item['warehouse'] ?? '',
-                warehouseName: item['warehouse_name'] ?? '', stops: [],
-              ))
-          .toList();
-    } else {
-      throw Exception('Failed to fetch routes: ${response.body}');
-    }
+  final response = await http.post(
+    Uri.parse('$baseUrl/route_plan.apis.route.get_salesman_routes_for_day'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({'day': day  , 'route_id': 'KDQ 154P'}),
+  );
+  if (response.statusCode != 200) {
+    throw Exception('Failed to fetch routes: ${response.body}');
   }
+
+  // 1) Decode the JSON payload
+  final Map<String, dynamic> body = jsonDecode(response.body);
+
+  // 2) Extract the "routes" array (note: your server returns it under "routes")
+  final List<dynamic> routesJson = body['routes'] as List<dynamic>;
+
+  // 3) Map each element through your factory
+  return routesJson
+      .map((e) => RouteData.fromJson(e as Map<String, dynamic>))
+      .toList();
+}
+
 
   Future<List<Item>> listItems(String routeId) async {
     final response = await http.get(
