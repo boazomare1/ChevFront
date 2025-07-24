@@ -1,13 +1,8 @@
 import 'package:chevenergies/screens/stops_screen.dart';
-import 'package:chevenergies/shared utils/widgets.dart';
 import 'package:flutter/material.dart';
 
 class NewSaleScreen extends StatelessWidget {
   const NewSaleScreen({super.key});
-
-  void _onMakeSale(BuildContext context) {
-    // TODO: push your make-sale flow
-  }
 
   void _onTakeOrder(BuildContext context) {
     // TODO: push your take-order flow
