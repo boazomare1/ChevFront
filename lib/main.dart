@@ -4,7 +4,7 @@ import 'package:chevenergies/screens/invoice.dart';
 import 'package:chevenergies/screens/items.dart';
 import 'package:chevenergies/screens/login.dart';
 import 'package:chevenergies/screens/payment.dart';
-import 'package:chevenergies/screens/stops_screen.dart';
+import 'package:chevenergies/screens/customers.dart';
 import 'package:chevenergies/services/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

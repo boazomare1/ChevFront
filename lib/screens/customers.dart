@@ -1,4 +1,5 @@
 import 'package:chevenergies/models/stop.dart';
+import 'package:chevenergies/screens/make_sale.dart';
 import 'package:chevenergies/shared utils/extension.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -226,7 +227,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
                       stop.townName.toUpperCase(),
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Colors.grey,
                         fontWeight: FontWeight.bold,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -239,12 +239,29 @@ class _CustomersScreenState extends State<CustomersScreen> {
                         Flexible(
                           child: Text(
                             stop.phone,
-                            style: const TextStyle(fontSize: 14),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => MakeSaleScreen(
+                                      shopName: stop.shop,
+                                      routeId: "KDQ 154P",
+                                      stopId: stop.name,
+                                      day: widget.day,
+                                    ),
+                              ),
+                            );
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.pinkAccent,
                             minimumSize: const Size(64, 32),
