@@ -27,3 +27,10 @@ double haversineDistanceKm({
 }
 
 double _toRadians(double degrees) => degrees * pi / 180;
+double calculateDiscountedPrice(double price, double discount) {
+  return (discount <= price) ? (price - discount) : price;
+}
+
+double calculateItemAmount(double price, double discount, double qty) {
+  return calculateDiscountedPrice(price, discount) * qty;
+}

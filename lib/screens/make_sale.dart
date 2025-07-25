@@ -3,8 +3,8 @@ import 'package:chevenergies/screens/payment.dart';
 import 'package:chevenergies/services/app_state.dart';
 import 'package:chevenergies/shared%20utils/widgets.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 
 class MakeSaleScreen extends StatefulWidget {
   final String shopName;
@@ -32,10 +32,18 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
   double get totalAmount => saleItems.fold(0.0, (sum, itm) {
     final price = itm['price'] as double;
     final qty = itm['qty'] as int;
-    final discount = itm['discount'] as double; // 0–100
-    final net = price * qty * (1 - discount / 100);
+    final discount = itm['discount'] as double; // Fixed amount in Ksh
+    final net = (price - discount) * qty; // Subtract discount per item
     return sum + net;
   });
+
+  final List<String> ticketReasons = [
+    'Shop closed',
+    'Stocked',
+    'Price disputes',
+    'Lack of cash',
+    'Product disputes',
+  ];
 
   @override
   void initState() {
@@ -70,7 +78,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
             title: const Text('Add Product'),
             content: StatefulBuilder(
               builder: (ctx, setInner) {
-                // maintain a filtered list
+                // Maintain a filtered list
                 List<Item> filtered =
                     items.where((i) {
                       final name = i.itemName ?? '';
@@ -88,7 +96,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // 2) Filtered dropdown
+                        // Filtered dropdown
                         StyledSelectField<Item>(
                           label: 'Choose Product',
                           items: items,
@@ -101,14 +109,14 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
 
                         const SizedBox(height: 12),
 
-                        // 3) Quantity
+                        // Quantity
                         StyledTextField(
                           label: 'Quantity',
                           controller: qtyCtrl,
                           keyboardType: TextInputType.number,
                         ),
 
-                        // 4) Discount checkbox + field
+                        // Discount checkbox + field
                         CheckboxListTile(
                           contentPadding: EdgeInsets.zero,
                           title: const Text('Apply discount?'),
@@ -118,7 +126,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                         ),
                         if (applyDisc)
                           StyledTextField(
-                            label: 'Discount (%)',
+                            label: 'Discount (Ksh)',
                             controller: discCtrl,
                             keyboardType: TextInputType.number,
                           ),
@@ -144,7 +152,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                         'name': selected!.itemName,
                         'price': selected!.sellingPrice,
                         'qty': q,
-                        'discount': applyDisc ? d.clamp(0, 100) : 0.0,
+                        'discount': applyDisc ? d.clamp(0, selected!.sellingPrice as num) : 0.0, // Clamp to avoid negative price
                       });
                     });
                     Navigator.pop(context);
@@ -158,17 +166,32 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
   }
 
   Future<void> _askNotAttending() async {
-    final ctrl = TextEditingController();
+    String? selectedReason;
 
     await showDialog(
       context: context,
       builder:
           (_) => AlertDialog(
             title: const Text('Reason for not serving'),
-            content: TextField(
-              controller: ctrl,
-              decoration: const InputDecoration(hintText: 'Enter reason'),
-              maxLines: 3,
+            content: StatefulBuilder(
+              builder: (ctx, setInnerState) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children:
+                      ticketReasons.map((reason) {
+                        return RadioListTile<String>(
+                          title: Text(reason),
+                          value: reason,
+                          groupValue: selectedReason,
+                          onChanged: (val) {
+                            setInnerState(() {
+                              selectedReason = val!;
+                            });
+                          },
+                        );
+                      }).toList(),
+                );
+              },
             ),
             actions: [
               TextButton(
@@ -177,8 +200,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  final reason = ctrl.text.trim();
-                  if (reason.isEmpty) return;
+                  if (selectedReason == null) return;
 
                   Navigator.pop(context); // Close dialog
 
@@ -198,11 +220,11 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                   try {
                     final state = Provider.of<AppState>(context, listen: false);
 
-                    final result = await state.raiseTicket(
+                    await state.raiseTicket(
                       widget.routeId,
                       widget.stopId,
                       widget.day,
-                      reason,
+                      selectedReason!,
                     );
 
                     Navigator.pop(context); // Close loader
@@ -216,12 +238,13 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                               Navigator.pop(context); // Close success dialog
                               Navigator.pop(
                                 context,
-                              ); // Go back to previous screen
+                              ); // Go back to customers list
                             },
                           ),
                     );
                   } catch (e) {
                     Navigator.pop(context); // Close loader
+
                     showDialog(
                       context: context,
                       builder:
@@ -262,7 +285,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
               quantity: (e['qty'] as int).toDouble(),
               warehouse: '',
               sellingPrice: e['price'] as double,
-              amount: (e['price'] as double) * (e['qty'] as int),
+              amount: ((e['price'] as double) - e['discount']) * (e['qty'] as int), // Adjust for fixed discount
             );
           }).toList();
 
@@ -273,7 +296,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
         items,
       );
 
-      Navigator.pop(context); // close loader
+      Navigator.pop(context); // Close loader
 
       // Show success and wait for dialog to close
       await showDialog(
@@ -281,7 +304,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
         builder:
             (_) => SuccessDialog(
               message: 'Invoice raised successfully!',
-              onClose: () => Navigator.pop(context), // just close the dialog
+              onClose: () => Navigator.pop(context), // Just close the dialog
             ),
       );
 
@@ -297,7 +320,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
         ),
       );
     } catch (e) {
-      Navigator.pop(context); // close loader
+      Navigator.pop(context); // Close loader
 
       showDialog(
         context: context,
@@ -389,7 +412,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
               final price = itm['price'] as double;
               final qty = itm['qty'] as int;
               final disc = itm['discount'] as double;
-              final total = price * qty * (1 - disc / 100);
+              final total = (price - disc) * qty; // Fixed discount calculation
               return Row(
                 children: [
                   Expanded(flex: 2, child: Text(itm['name'])),
@@ -397,7 +420,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                   Expanded(child: Text('$qty', textAlign: TextAlign.center)),
                   Expanded(
                     child: Text(
-                      '${disc.toStringAsFixed(0)}%',
+                      'Ksh ${disc.toStringAsFixed(2)}',
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -467,8 +490,8 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
             _buildPaymentStatusCard(),
             if (saleItems.isEmpty) ...[
               Card(
-                color: Colors.red.shade50, // subtle red background
-                elevation: 4, // raised effect
+                color: Colors.red.shade50, // Subtle red background
+                elevation: 4, // Raised effect
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

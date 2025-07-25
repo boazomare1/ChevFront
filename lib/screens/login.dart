@@ -30,13 +30,29 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (_) => const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+            ),
+          ),
+    );
+
     try {
-      await Provider.of<AppState>(context, listen: false)
-          .login(_emailController.text, _passwordController.text);     
+      await Provider.of<AppState>(
+        context,
+        listen: false,
+      ).login(_emailController.text, _passwordController.text);
+      Navigator.pop(context);
     } catch (e) {
+      Navigator.pop(context); // Close loading dialog
       showDialog(
         context: context,
-        builder: (context) => ErrorDialog(message: 'Login failed: $e'),
+        builder: (context) => ErrorDialog(message: '$e'),
       );
     }
   }
@@ -102,15 +118,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: ElevatedButton(
                             onPressed: _login,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromARGB(255, 2, 97, 49), // Magenta
+                              backgroundColor: const Color.fromARGB(
+                                255,
+                                2,
+                                97,
+                                49,
+                              ), // Magenta
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
                             ),
-                            child: const Text('Login',
-                              style: TextStyle(fontSize: 18,color: Colors.greenAccent),
+                            child: const Text(
+                              'Login',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.greenAccent,
+                              ),
                               selectionColor: Colors.greenAccent,
                             ),
                           ),
