@@ -20,6 +20,15 @@ class AppState with ChangeNotifier {
     final data = await apiService.raiseInvoice(routeId, stopId, day, items);
     return data;
   }
+  Future<Map<String, dynamic>> raiseTicket(
+  String routeId,
+  String stopId,
+  String day,
+  String notes,
+) {
+  return apiService.raiseTicket(routeId, stopId, day, notes);
+}
+
   Future<void> createPayment(String invoiceId, double amount, String mode) =>
       apiService.createPayment(invoiceId, amount, mode);
 }

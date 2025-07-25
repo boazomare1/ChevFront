@@ -39,6 +39,34 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> raiseTicket(
+  String routeId,
+  String stopId,
+  String day,
+  String notes,
+) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/route_plan.apis.sales.raise_ticket'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({
+      'route_id': routeId,
+      'stop_id': stopId,
+      'day': day,
+      'notes': notes,
+    }),
+  );
+print('Response status: $response');
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    final data = jsonDecode(response.body);
+    return data;
+  } else {
+    throw Exception('Failed to raise ticket: ${response.body}');
+  }
+}
+
   Future<List<RouteData>> getRoutes(String day) async {
   final response = await http.post(
     Uri.parse('$baseUrl/route_plan.apis.route.get_salesman_routes_for_day'),

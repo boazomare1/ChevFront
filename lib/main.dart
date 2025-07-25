@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
               routeId: ModalRoute.of(context)!.settings.arguments as String,
               item: ModalRoute.of(context)!.settings.arguments as Item,
             ),
-        '/payment': (context) => PaymentScreen(invoiceId: ModalRoute.of(context)!.settings.arguments as String),
+        '/payment': (context) => PaymentScreen(invoiceId: ModalRoute.of(context)!.settings.arguments as String, totalAmount: 0,),
       },
     );
   }

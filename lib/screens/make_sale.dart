@@ -1,4 +1,5 @@
 import 'package:chevenergies/models/item.dart';
+import 'package:chevenergies/screens/payment.dart';
 import 'package:chevenergies/services/app_state.dart';
 import 'package:chevenergies/shared%20utils/widgets.dart';
 import 'package:flutter/material.dart';
@@ -158,6 +159,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
 
   Future<void> _askNotAttending() async {
     final ctrl = TextEditingController();
+
     await showDialog(
       context: context,
       builder:
@@ -174,9 +176,60 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                 child: const Text('CANCEL'),
               ),
               ElevatedButton(
-                onPressed: () {
-                  setState(() => _notAttendingReason = ctrl.text);
-                  Navigator.pop(context);
+                onPressed: () async {
+                  final reason = ctrl.text.trim();
+                  if (reason.isEmpty) return;
+
+                  Navigator.pop(context); // Close dialog
+
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder:
+                        (_) => const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.red,
+                            ),
+                          ),
+                        ),
+                  );
+
+                  try {
+                    final state = Provider.of<AppState>(context, listen: false);
+
+                    final result = await state.raiseTicket(
+                      widget.routeId,
+                      widget.stopId,
+                      widget.day,
+                      reason,
+                    );
+
+                    Navigator.pop(context); // Close loader
+
+                    showDialog(
+                      context: context,
+                      builder:
+                          (_) => SuccessDialog(
+                            message: 'Ticket raised successfully!',
+                            onClose: () {
+                              Navigator.pop(context); // Close success dialog
+                              Navigator.pop(
+                                context,
+                              ); // Go back to previous screen
+                            },
+                          ),
+                    );
+                  } catch (e) {
+                    Navigator.pop(context); // Close loader
+                    showDialog(
+                      context: context,
+                      builder:
+                          (_) => ErrorDialog(
+                            message: 'Failed to raise ticket:\n${e.toString()}',
+                          ),
+                    );
+                  }
                 },
                 child: const Text('SUBMIT'),
               ),
@@ -222,15 +275,26 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
 
       Navigator.pop(context); // close loader
 
-      showDialog(
+      // Show success and wait for dialog to close
+      await showDialog(
         context: context,
         builder:
             (_) => SuccessDialog(
               message: 'Invoice raised successfully!',
-              onClose: () {
-                // Optional: clear saleItems, move to next screen, etc.
-              },
+              onClose: () => Navigator.pop(context), // just close the dialog
             ),
+      );
+
+      // Now navigate to payment screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => PaymentScreen(
+                invoiceId: result['invoice_id'],
+                totalAmount: totalAmount,
+              ),
+        ),
       );
     } catch (e) {
       Navigator.pop(context); // close loader

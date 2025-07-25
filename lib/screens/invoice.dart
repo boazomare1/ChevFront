@@ -100,7 +100,7 @@ class _InvoiceScreenState extends State<InvoiceScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PaymentScreen(invoiceId: _invoiceId!),
+                      builder: (context) => PaymentScreen(invoiceId: _invoiceId!, totalAmount: 0,),
                     ),
                   );
                 } catch (e) {
