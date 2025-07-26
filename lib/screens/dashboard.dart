@@ -1,5 +1,6 @@
 import 'package:chevenergies/screens/sales.dart';
 import 'package:chevenergies/screens/sales_dash.dart';
+import 'package:chevenergies/screens/sales_history.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
@@ -108,7 +109,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         label: 'Sale History',
         iconPath: 'assets/sale-badge.png',
         onTap: () {
-          // TODO: push Sale History
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const InvoiceListScreen()),
+          );
         },
       ),
       _Feature(

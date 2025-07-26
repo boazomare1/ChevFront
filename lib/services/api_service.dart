@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:chevenergies/models/invoice.dart';
 import 'package:chevenergies/models/item.dart' show Item;
 import 'package:chevenergies/models/routedata.dart';
 import 'package:chevenergies/models/user.dart';
@@ -42,6 +43,57 @@ class ApiService {
       );
     } else {
       throw Exception('Login failed: ${response.body}');
+    }
+  }
+
+  Future<List<Invoice>> listInvoices({
+    required String routeId,
+    required String startDate,
+    required String endDate,
+    int start = 0,
+    int pageLength = 20,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/route_plan.apis.sales.list_invoices'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'route_id': routeId,
+        'start_date': startDate,
+        'end_date': endDate,
+        'start': start,
+        'page_length': pageLength,
+      }),
+    );
+
+    print("From Invoice List {${response.body}");
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final invoices = data['invoices'] as List;
+      return invoices.map((json) => Invoice.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to fetch invoices');
+    }
+  }
+
+  Future<Invoice> getInvoiceById(String invoiceId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/route_plan.apis.sales.get_invoice_by_id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'invoice_id': invoiceId}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body)['data'];
+      return Invoice.fromJson(data);
+    } else {
+      throw Exception('Failed to get invoice: ${response.body}');
     }
   }
 
