@@ -1,0 +1,240 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+class TotalSalesScreen extends StatefulWidget {
+  const TotalSalesScreen({super.key});
+
+  @override
+  State<TotalSalesScreen> createState() => _TotalSalesScreenState();
+}
+
+class _TotalSalesScreenState extends State<TotalSalesScreen> {
+  DateTime startDate = DateTime.now();
+  DateTime endDate = DateTime.now();
+
+  Future<void> _pickDate({required bool isStart}) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: isStart ? startDate : endDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          startDate = picked;
+        } else {
+          endDate = picked;
+        }
+      });
+    }
+  }
+
+  String formatDate(DateTime date) => DateFormat('yyyy-MM-dd').format(date);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          Container(
+            color: Colors.green[800],
+            padding: const EdgeInsets.only(top: 50, bottom: 16),
+            width: double.infinity,
+            child: const Column(
+              children: [
+                Text('TOTAL SALES',
+                    style: TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                SizedBox(height: 4),
+                Text('―', style: TextStyle(color: Colors.white, fontSize: 18)),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Card(
+                    margin: const EdgeInsets.all(12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('TOTAL SALES - KDC 378L',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.pink)),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Start Date'),
+                                    InkWell(
+                                      onTap: () => _pickDate(isStart: true),
+                                      child: InputDecorator(
+                                        decoration: const InputDecoration(
+                                          border: UnderlineInputBorder(),
+                                        ),
+                                        child: Text(formatDate(startDate)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('End Date'),
+                                    InkWell(
+                                      onTap: () => _pickDate(isStart: false),
+                                      child: InputDecorator(
+                                        decoration: const InputDecoration(
+                                          border: UnderlineInputBorder(),
+                                        ),
+                                        child: Text(formatDate(endDate)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              ElevatedButton(
+                                onPressed: () {},
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.pink,
+                                ),
+                                child: const Text('SUBMIT'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Divider(),
+                          _buildSalesTable(),
+                          const Divider(),
+                          const Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              'Total Sales:     KES 70900',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Summary of Sales Statistics Today',
+                    style: TextStyle(
+                      color: Colors.pink,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildSummaryCard([
+                        'Standard Sales: 22',
+                        'Discounted Sales: 0',
+                        'Ticket Sales: 40'
+                      ])),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildSummaryCard([
+                        'Total Customers: 58',
+                        'Customers Served: 58',
+                        'Yet to be served: 0'
+                      ])),
+                      const SizedBox(width: 12),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.pink,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        minimumSize: const Size.fromHeight(50),
+                      ),
+                      child: const Text(
+                        'CLOSE STOCK',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalesTable() {
+    const headers = ['Id', 'Name', 'Qty', 'Total'];
+    final rows = [
+      ['4081', 'POWER GAS 6KG CYLINDER', '3', '4650'],
+      ['4096', 'POWER GAS 13KG CYLINDER', '2', '2650'],
+      ['4099', 'POWER REFIL 6KG', '52', '46800'],
+      ['4100', 'POWER REFIL 13KG', '4', '7800'],
+      ['4108', 'POWER REFIL 50KG', '1', '7500'],
+      ['4120', '#A1 burners', '5', '1500'],
+    ];
+    return Column(
+      children: [
+        Row(
+          children: headers
+              .map((h) => Expanded(
+                    flex: h == 'Name' ? 3 : 1,
+                    child: Text(h, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: 6),
+        ...rows.map((row) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: row
+                    .asMap()
+                    .entries
+                    .map((entry) => Expanded(
+                          flex: entry.key == 1 ? 3 : 1,
+                          child: Text(entry.value),
+                        ))
+                    .toList(),
+              ),
+            )),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard(List<String> lines) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: lines.map((text) => Text(text)).toList()),
+      ),
+    );
+  }
+}

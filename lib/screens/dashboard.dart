@@ -1,4 +1,5 @@
 import 'package:chevenergies/screens/sales.dart';
+import 'package:chevenergies/screens/sales_dash.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
@@ -114,7 +115,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         label: 'Sales Summary',
         iconPath: 'assets/sales.png',
         onTap: () {
-          // TODO: push Sales Summary
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SalesSummaryDashScreen()),
+          );
         },
       ),
       _Feature(
