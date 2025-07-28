@@ -1,5 +1,6 @@
 import 'package:chevenergies/screens/customers.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class NewSaleScreen extends StatelessWidget {
   const NewSaleScreen({super.key});
@@ -14,7 +15,8 @@ class NewSaleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use a small data class for type safety
+    final today = DateFormat('EEEE').format(DateTime.now()).toLowerCase(); // e.g. 'monday'
+
     final items = <_ActionItem>[
       _ActionItem(
         label: 'Make Sale',
@@ -22,7 +24,9 @@ class NewSaleScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const CustomersScreen(day: 'monday')),
+            MaterialPageRoute(
+              builder: (_) => CustomersScreen(day: today),
+            ),
           );
         },
       ),
@@ -36,21 +40,16 @@ class NewSaleScreen extends StatelessWidget {
         iconPath: 'assets/add-user.png',
         onTap: () => _onNewCustomer(context),
       ),
-      // Blank placeholder to keep grid even
       const _ActionItem(label: '', iconPath: '', onTap: null),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF228B22), // Green header
+        backgroundColor: const Color(0xFF228B22),
         elevation: 0,
         leading: IconButton(
           padding: const EdgeInsets.all(10),
-          icon: Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-            size: 24,
-          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -90,7 +89,6 @@ class NewSaleScreen extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: items.map((item) {
-              // If label empty, render a blank box
               if (item.label.isEmpty) {
                 return SizedBox(
                   width: MediaQuery.of(context).size.width / 2 - 20,
@@ -147,7 +145,6 @@ class NewSaleScreen extends StatelessWidget {
   }
 }
 
-// Simple data class for action tiles
 class _ActionItem {
   final String label;
   final String iconPath;

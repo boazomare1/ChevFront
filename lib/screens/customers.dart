@@ -17,6 +17,7 @@ class CustomersScreen extends StatefulWidget {
 class _CustomersScreenState extends State<CustomersScreen> {
   List<Stop> _stops = [];
   bool _isLoading = false;
+  final Map<String, String> _stopToRouteMap = {};
   String? _error;
   Position? _currentPosition;
 
@@ -39,12 +40,20 @@ class _CustomersScreenState extends State<CustomersScreen> {
         desiredAccuracy: LocationAccuracy.best,
       );
 
-      // load stops
       final routes = await Provider.of<AppState>(
         context,
         listen: false,
       ).getRoutes(widget.day);
-      _stops = routes.expand((r) => r.stops).toList();
+
+      _stops = [];
+      _stopToRouteMap.clear();
+
+      for (final route in routes) {
+        for (final stop in route.stops) {
+          _stops.add(stop);
+          _stopToRouteMap[stop.name] = route.routeId;
+        }
+      }
     } catch (e) {
       _error = 'Failed to load customers: $e';
     } finally {
@@ -249,13 +258,14 @@ class _CustomersScreenState extends State<CustomersScreen> {
                         ),
                         ElevatedButton(
                           onPressed: () {
+                            final routeId = _stopToRouteMap[stop.name] ?? 'unknown';
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder:
                                     (_) => MakeSaleScreen(
                                       shopName: stop.shop,
-                                      routeId: "KDQ 154P",
+                                      routeId: routeId,
                                       stopId: stop.name,
                                       day: widget.day,
                                     ),

@@ -22,7 +22,13 @@ class AppState with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List<RouteData>> getRoutes(String day) => apiService.getRoutes(day);
+   Future<List<RouteData>> getRoutes(String day) async {
+    if (user == null || user!.routes.isEmpty) {
+      return [];
+    }
+    final routeId = user!.routes.first.routeId;
+    return await apiService.getRoutes(day, routeId);
+  }
   Future<List<Item>> listItems(String routeId) => apiService.listItems(routeId);
 
   Future<Map<String, dynamic>> raiseInvoice(String routeId, String stopId, String day, List<Item> items) async {

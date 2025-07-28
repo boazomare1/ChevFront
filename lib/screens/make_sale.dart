@@ -60,10 +60,23 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
   }
 
   Future<void> showAddProductDialog() async {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+      ),
+    ),
+  );
+
+  try {
     final items = await Provider.of<AppState>(
       context,
       listen: false,
     ).listItems(widget.routeId);
+
+    Navigator.pop(context); // Close loader
 
     Item? selected;
     final searchCtrl = TextEditingController();
@@ -73,97 +86,97 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
 
     await showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text('Add Product'),
-            content: StatefulBuilder(
-              builder: (ctx, setInner) {
-                // Maintain a filtered list
-                List<Item> filtered =
-                    items.where((i) {
-                      final name = i.itemName ?? '';
-                      final query = searchCtrl.text;
-                      return name.toLowerCase().contains(query.toLowerCase());
-                    }).toList();
+      builder: (_) => AlertDialog(
+        title: const Text('Add Product'),
+        content: StatefulBuilder(
+          builder: (ctx, setInner) {
+            List<Item> filtered = items.where((i) {
+              final name = i.itemName ?? '';
+              final query = searchCtrl.text;
+              return name.toLowerCase().contains(query.toLowerCase());
+            }).toList();
 
-                return Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.all(12),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Filtered dropdown
-                        StyledSelectField<Item>(
-                          label: 'Choose Product',
-                          items: items,
-                          selected: selected,
-                          onChanged: (item) => setInner(() => selected = item),
-                          displayString:
-                              (item) =>
-                                  '${item.itemName} (Ksh ${item.sellingPrice})',
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Quantity
-                        StyledTextField(
-                          label: 'Quantity',
-                          controller: qtyCtrl,
-                          keyboardType: TextInputType.number,
-                        ),
-
-                        // Discount checkbox + field
-                        CheckboxListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Apply discount?'),
-                          value: applyDisc,
-                          onChanged:
-                              (v) => setInner(() => applyDisc = v ?? false),
-                        ),
-                        if (applyDisc)
-                          StyledTextField(
-                            label: 'Discount (Ksh)',
-                            controller: discCtrl,
-                            keyboardType: TextInputType.number,
-                          ),
-                      ],
+            return Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.all(12),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    StyledSelectField<Item>(
+                      label: 'Choose Product',
+                      items: items,
+                      selected: selected,
+                      onChanged: (item) => setInner(() => selected = item),
+                      displayString: (item) =>
+                          '${item.itemName} (Ksh ${item.sellingPrice})',
                     ),
-                  ),
-                );
-              },
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('CANCEL'),
+                    const SizedBox(height: 12),
+                    StyledTextField(
+                      label: 'Quantity',
+                      controller: qtyCtrl,
+                      keyboardType: TextInputType.number,
+                    ),
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Apply discount?'),
+                      value: applyDisc,
+                      onChanged: (v) => setInner(() => applyDisc = v ?? false),
+                    ),
+                    if (applyDisc)
+                      StyledTextField(
+                        label: 'Discount (Ksh)',
+                        controller: discCtrl,
+                        keyboardType: TextInputType.number,
+                      ),
+                  ],
+                ),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  if (selected != null) {
-                    final q = int.tryParse(qtyCtrl.text) ?? 1;
-                    final d = double.tryParse(discCtrl.text) ?? 0.0;
-                    setState(() {
-                      saleItems.add({
-                        'itemCode': selected!.itemCode,
-                        'name': selected!.itemName,
-                        'price': selected!.sellingPrice,
-                        'qty': q,
-                        'discount': applyDisc ? d.clamp(0, selected!.sellingPrice as num) : 0.0, // Clamp to avoid negative price
-                      });
-                    });
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('ADD'),
-              ),
-            ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('CANCEL'),
           ),
+          ElevatedButton(
+            onPressed: () {
+              if (selected != null) {
+                final q = int.tryParse(qtyCtrl.text) ?? 1;
+                final d = double.tryParse(discCtrl.text) ?? 0.0;
+                setState(() {
+                  saleItems.add({
+                    'itemCode': selected!.itemCode,
+                    'name': selected!.itemName,
+                    'price': selected!.sellingPrice,
+                    'qty': q,
+                    'discount': applyDisc
+                        ? d.clamp(0, selected!.sellingPrice as num)
+                        : 0.0,
+                  });
+                });
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('ADD'),
+          ),
+        ],
+      ),
+    );
+  } catch (e) {
+    Navigator.pop(context); // Close loader
+    showDialog(
+      context: context,
+      builder: (_) => ErrorDialog(
+        message: 'Failed to load products:\n${e.toString()}',
+      ),
     );
   }
+}
 
   Future<void> _askNotAttending() async {
     String? selectedReason;

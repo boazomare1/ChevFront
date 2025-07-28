@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
 class ApiService {
+  
   final String baseUrl =
       'https://chevenergies.techsavanna.technology/api/method';
   String? token;
@@ -124,14 +125,14 @@ class ApiService {
     }
   }
 
-  Future<List<RouteData>> getRoutes(String day) async {
+  Future<List<RouteData>> getRoutes(String day,String routeId) async {
     final response = await http.post(
       Uri.parse('$baseUrl/route_plan.apis.route.get_salesman_routes_for_day'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({'day': day, 'route_id': 'KDQ 154P'}),
+      body: jsonEncode({'day': day, 'route_id': routeId}),
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to fetch routes: ${response.body}');
@@ -159,6 +160,7 @@ class ApiService {
         'Authorization': 'Bearer $token',
       },
     );
+    print("From List Items {${response.body}");
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return (data['data'] as List)
