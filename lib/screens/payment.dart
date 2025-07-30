@@ -124,6 +124,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 StyledTextField(
                   label: 'Amount',
                   controller: _amountCtrl,
+                  readOnly: true,
                   keyboardType: TextInputType.number,
                 ),
 

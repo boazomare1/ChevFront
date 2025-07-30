@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class StyledTextField extends StatefulWidget {
   final String label;
   final bool obscureText;
+  final bool readOnly;
   final TextEditingController controller;
   final TextInputType keyboardType;
+  final String? Function(String?)? validator;
+  final Icon? prefixIcon;
+  final List<TextInputFormatter>? inputFormatters;
 
   const StyledTextField({
     super.key,
@@ -12,6 +17,10 @@ class StyledTextField extends StatefulWidget {
     this.obscureText = false,
     required this.controller,
     this.keyboardType = TextInputType.text,
+    this.validator,
+    this.prefixIcon,
+    this.readOnly = false,
+    this.inputFormatters,
   });
 
   @override
@@ -31,26 +40,51 @@ class _StyledTextFieldState extends State<StyledTextField> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextField(
+      child: TextFormField(
         controller: widget.controller,
         obscureText: _isObscure,
         keyboardType: widget.keyboardType,
+        inputFormatters: widget.inputFormatters,
+        validator: widget.validator,
+        readOnly: widget.readOnly,
         decoration: InputDecoration(
           labelText: widget.label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+          prefixIcon: widget.prefixIcon,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[400]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[400]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).primaryColor,
+              width: 2,
+            ),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red, width: 2),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red, width: 2),
+          ),
           filled: true,
-          fillColor: const Color.fromARGB(
-            255,
-            196,
-            233,
-            198,
-          ), // Magenta background
+          fillColor: Colors.grey[100],
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 12,
+          ),
           suffixIcon:
               widget.obscureText
                   ? IconButton(
                     icon: Icon(
                       _isObscure ? Icons.visibility : Icons.visibility_off,
-                      color: Colors.white,
+                      color: Colors.grey[600],
                     ),
                     onPressed: () {
                       setState(() {
@@ -73,12 +107,22 @@ class ErrorDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Error'),
-      content: Text(message),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red[700]),
+          const SizedBox(width: 8),
+          const Text('Error'),
+        ],
+      ),
+      content: Text(message, style: TextStyle(color: Colors.grey[800])),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('OK'),
+          child: Text(
+            'OK',
+            style: TextStyle(color: Theme.of(context).primaryColor),
+          ),
         ),
       ],
     );
@@ -91,6 +135,8 @@ class StyledSelectField<T> extends StatefulWidget {
   final T? selected;
   final void Function(T?) onChanged;
   final String Function(T) displayString;
+  final String? Function(T?)? validator;
+  final Icon? prefixIcon;
 
   const StyledSelectField({
     super.key,
@@ -99,6 +145,8 @@ class StyledSelectField<T> extends StatefulWidget {
     required this.selected,
     required this.onChanged,
     required this.displayString,
+    this.validator,
+    this.prefixIcon,
   });
 
   @override
@@ -140,25 +188,37 @@ class _StyledSelectFieldState<T> extends State<StyledSelectField<T>> {
       context: context,
       builder:
           (_) => AlertDialog(
-            title: Text(widget.label),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: Row(
+              children: [
+                if (widget.prefixIcon != null) ...[
+                  widget.prefixIcon!,
+                  const SizedBox(width: 8),
+                ],
+                Text(widget.label),
+              ],
+            ),
             content: Container(
               width: double.maxFinite,
               constraints: const BoxConstraints(maxHeight: 400),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Search Input
                   TextField(
                     controller: _searchCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Search .... ',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: 'Search',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
                     ),
                   ),
                   const SizedBox(height: 12),
-
-                  // Filtered List
                   Expanded(
                     child:
                         _filtered.isEmpty
@@ -167,25 +227,26 @@ class _StyledSelectFieldState<T> extends State<StyledSelectField<T>> {
                               itemCount: _filtered.length,
                               itemBuilder: (_, index) {
                                 final item = _filtered[index];
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
+                                return Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: const Color.fromARGB(
-                                        255,
-                                        196,
-                                        233,
-                                        198,
-                                      ), // soft green border
-                                      width: 1.5,
-                                    ),
                                   ),
                                   child: ListTile(
-                                    title: Text(widget.displayString(item)),
+                                    title: Text(
+                                      widget.displayString(item),
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                    trailing:
+                                        widget.selected == item
+                                            ? Icon(
+                                              Icons.check,
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                            )
+                                            : null,
                                     onTap: () {
                                       widget.onChanged(item);
                                       Navigator.pop(context);
@@ -201,7 +262,10 @@ class _StyledSelectFieldState<T> extends State<StyledSelectField<T>> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('CANCEL'),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: Theme.of(context).primaryColor),
+                ),
               ),
             ],
           ),
@@ -215,7 +279,7 @@ class _StyledSelectFieldState<T> extends State<StyledSelectField<T>> {
       child: AbsorbPointer(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: TextField(
+          child: TextFormField(
             controller: TextEditingController(
               text:
                   widget.selected != null
@@ -223,14 +287,45 @@ class _StyledSelectFieldState<T> extends State<StyledSelectField<T>> {
                       : '',
             ),
             readOnly: true,
+            validator:
+                widget.validator != null
+                    ? (String? value) {
+                      // Convert String? input to T? for the validator
+                      return widget.validator!(widget.selected);
+                    }
+                    : null,
             decoration: InputDecoration(
               labelText: widget.label,
+              prefixIcon: widget.prefixIcon,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[400]!),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Theme.of(context).primaryColor,
+                  width: 2,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red, width: 2),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.red, width: 2),
               ),
               filled: true,
-              fillColor: const Color.fromARGB(255, 196, 233, 198),
-              suffixIcon: const Icon(Icons.arrow_drop_down),
+              fillColor: Colors.grey[100],
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 16,
+                horizontal: 12,
+              ),
+              suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
             ),
           ),
         ),
@@ -248,15 +343,25 @@ class SuccessDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Success'),
-      content: Text(message),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.green[700]),
+          const SizedBox(width: 8),
+          const Text('Success'),
+        ],
+      ),
+      content: Text(message, style: TextStyle(color: Colors.grey[800])),
       actions: [
         TextButton(
           onPressed: () {
             if (onClose != null) onClose!();
             Navigator.pop(context);
           },
-          child: const Text('OK'),
+          child: Text(
+            'OK',
+            style: TextStyle(color: Theme.of(context).primaryColor),
+          ),
         ),
       ],
     );

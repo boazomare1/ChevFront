@@ -1,12 +1,14 @@
 import 'package:chevenergies/screens/sales.dart';
 import 'package:chevenergies/screens/sales_dash.dart';
 import 'package:chevenergies/screens/sales_history.dart';
+import 'package:chevenergies/screens/stock_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -93,6 +95,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<Widget> _buildFeatureTiles(BuildContext context) {
+    final user = Provider.of<AppState>(context).user!;
     // Typed data class eliminates Object->String errors
     final features = <_Feature>[
       _Feature(
@@ -129,7 +132,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         label: 'Stock',
         iconPath: 'assets/money.png',
         onTap: () {
-          // TODO: push Stock
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => StockScreen(
+              routeId: user.routes.first.routeId,
+            )),
+          );
         },
       ),
       _Feature(
