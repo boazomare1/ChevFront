@@ -61,8 +61,9 @@ class AppState with ChangeNotifier {
     int pageLength = 20,
   }) async {
     if (user == null || user!.routes.isEmpty) {
-      // no route – bail out
+      print('No user or routes available, setting invoices to empty list');
       _invoices = [];
+      _isLoadingInvoices = false;
       notifyListeners();
       return;
     }
@@ -70,23 +71,25 @@ class AppState with ChangeNotifier {
     _isLoadingInvoices = true;
     notifyListeners();
 
-    // grab the first routeId from the logged‑in user
     final routeId = user!.routes.first.routeId;
-
     final fmt = DateFormat('yyyy-MM-dd');
     final startStr = fmt.format(startDate);
     final endStr = fmt.format(endDate);
 
     try {
-      _invoices = await apiService.listInvoices(
+      print('Fetching invoices for routeId: $routeId, startDate: $startStr, endDate: $endStr');
+      final invoices = await apiService.listInvoices(
         routeId: routeId,
         startDate: startStr,
         endDate: endStr,
         start: start,
         pageLength: pageLength,
       );
-    } catch (e) {
+      print('Successfully fetched ${invoices.length} invoices');
+      _invoices = invoices;
+    } catch (e, stackTrace) {
       print('Error fetching invoices: $e');
+      print('Stack trace: $stackTrace');
       _invoices = [];
     }
 
@@ -98,12 +101,10 @@ class AppState with ChangeNotifier {
     return apiService.getInvoiceById(invoiceId);
   }
 
-  // 🔹 New: List Territories
   Future<List<String>> listTerritories() {
     return apiService.listTerritories();
   }
 
-  // 🔹 New: Create Customer
   Future<Map<String, dynamic>> createCustomer({
     required String name,
     required String type,
@@ -116,7 +117,6 @@ class AppState with ChangeNotifier {
     );
   }
 
-  // 🔹 New: Create Shop
   Future<void> createShop({
     required String shopName,
     required String customerId,

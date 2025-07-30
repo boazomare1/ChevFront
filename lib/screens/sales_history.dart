@@ -23,7 +23,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   DateTime selectedDate = DateTime.now();
   Set<String> expandedInvoiceIds = {};
   String searchQuery = '';
-  String? statusFilter; // 'Paid', 'Unpaid', null
+  String? statusFilter; // 'Paid', 'Unpaid', 'Partly Paid', null
 
   @override
   void initState() {
@@ -33,7 +33,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
   void _loadInvoices() {
     final appState = Provider.of<AppState>(context, listen: false);
-
     appState.fetchInvoices(startDate: selectedDate, endDate: selectedDate);
   }
 
@@ -46,12 +45,21 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     );
 
     if (picked != null && picked != selectedDate) {
-      setState(() => selectedDate = picked);
-      _loadInvoices(); // currently fetches all
+      setState(() {
+        selectedDate = picked;
+      });
+      _loadInvoices();
     }
   }
 
-  // Determine PDF color
+  void _clearFilters() {
+    setState(() {
+      searchQuery = '';
+      statusFilter = null;
+    });
+    _loadInvoices();
+  }
+
   PdfColor getStatusPdfColor(String status) {
     switch (status.toLowerCase()) {
       case 'paid':
@@ -60,6 +68,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         return PdfColors.red;
       case 'partly paid':
         return PdfColors.blue;
+      case 'overdue':
+        return PdfColors.deepOrange;
       default:
         return PdfColors.grey;
     }
@@ -76,6 +86,11 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         break;
       case 'partly paid':
         color = Colors.blue;
+        break;
+      case 'overdue':
+        color =
+            Colors
+                .deepOrange; // 🔴 You can use Colors.bloodRed if defined or deepOrange
         break;
       default:
         color = Colors.grey;
@@ -123,7 +138,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    invoice.customer,
+                    invoice.customer.customerName,
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   _buildStatusBadge(invoice.status),
@@ -132,6 +147,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
               SizedBox(height: 4),
               Text('Shop: ${invoice.shop}'),
               Text('Total: Ksh ${invoice.total.toStringAsFixed(0)}'),
+              Text(
+                'Outstanding: Ksh ${invoice.outstandingBalance.toStringAsFixed(0)}',
+              ),
               Text('Date: ${invoice.postingDate}'),
               if (isExpanded) ...[
                 Divider(),
@@ -154,7 +172,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                       label: Text('Preview PDF'),
                     ),
                     if (invoice.status == 'Unpaid' ||
-                        invoice.status == 'Partly Paid')
+                        invoice.status == 'Partly Paid' ||
+                        invoice.status == 'Overdue')
                       ElevatedButton.icon(
                         onPressed: () => _goToPaymentScreen(invoice),
                         icon: Icon(Icons.payment),
@@ -178,37 +197,26 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   }
 
   void _goToPaymentScreen(Invoice invoice) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => PaymentScreen(
-        invoiceId: invoice.invoiceId,
-        totalAmount: invoice.total, // or remaining balance if available
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => PaymentScreen(
+              invoiceId: invoice.invoiceId,
+              totalAmount:
+                  invoice.outstandingBalance > 0
+                      ? invoice.outstandingBalance
+                      : invoice.total,
+            ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Future<void> _previewInvoicePDF(Invoice invoice) async {
     final pdf = pw.Document();
 
-    // Load logo image
     final logoBytes = await rootBundle.load('assets/logo.png');
     final logoImage = pw.MemoryImage(logoBytes.buffer.asUint8List());
-
-    PdfColor getStatusPdfColor(String status) {
-      switch (status.toLowerCase()) {
-        case 'paid':
-          return PdfColors.green;
-        case 'unpaid':
-          return PdfColors.red;
-        case 'partly paid':
-          return PdfColors.blue;
-        default:
-          return PdfColors.grey;
-      }
-    }
 
     pdf.addPage(
       pw.Page(
@@ -245,7 +253,10 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                   'Invoice ID: ${invoice.invoiceId}',
                   style: pw.TextStyle(fontSize: 16),
                 ),
-                pw.Text('Customer: ${invoice.customer}'),
+                pw.Text('Customer: ${invoice.customer.customerName}'),
+                pw.Text('Customer Type: ${invoice.customer.customerType}'),
+                if (invoice.customer.territory != null)
+                  pw.Text('Territory: ${invoice.customer.territory}'),
                 pw.Text('Shop: ${invoice.shop}'),
                 pw.Text(
                   'Status: ${invoice.status}',
@@ -257,10 +268,78 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                   style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                 ),
                 pw.SizedBox(height: 6),
-                ...invoice.items.map(
-                  (item) => pw.Text(
-                    '${item.qty} x ${item.itemName} @ Ksh ${item.rate.toStringAsFixed(0)}',
-                  ),
+                // Table for items
+                pw.Table(
+                  border: pw.TableBorder.all(),
+                  columnWidths: {
+                    0: pw.FixedColumnWidth(50), // No
+                    1: pw.FlexColumnWidth(), // Name
+                    2: pw.FixedColumnWidth(80), // Quantity
+                    3: pw.FixedColumnWidth(100), // Price
+                  },
+                  children: [
+                    // Header row
+                    pw.TableRow(
+                      decoration: pw.BoxDecoration(color: PdfColors.grey200),
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'No',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Name',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Quantity',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.all(8),
+                          child: pw.Text(
+                            'Price',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Data rows
+                    ...invoice.items.asMap().entries.map((entry) {
+                      final index = entry.key + 1; // Start numbering from 1
+                      final item = entry.value;
+                      return pw.TableRow(
+                        children: [
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text('$index'),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(item.itemName),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(item.qty.toStringAsFixed(0)),
+                          ),
+                          pw.Padding(
+                            padding: const pw.EdgeInsets.all(8),
+                            child: pw.Text(
+                              'Ksh ${item.rate.toStringAsFixed(0)}',
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ],
                 ),
                 pw.SizedBox(height: 10),
                 pw.Text(
@@ -270,17 +349,26 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                     fontWeight: pw.FontWeight.bold,
                   ),
                 ),
+                pw.Text('Paid: Ksh ${invoice.paidAmount.toStringAsFixed(2)}'),
+                pw.Text(
+                  'Outstanding: Ksh ${invoice.outstandingBalance.toStringAsFixed(2)}',
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                    color:
+                        invoice.outstandingBalance > 0
+                            ? PdfColors.red
+                            : PdfColors.black,
+                  ),
+                ),
               ],
             ),
       ),
     );
 
-    // Show preview
     await Printing.layoutPdf(onLayout: (format) => pdf.save());
 
-    // Save file to downloads directory
-    final output =
-        await getApplicationDocumentsDirectory(); // or getDownloadsDirectory() on desktop
+    final output = await getApplicationDocumentsDirectory();
     final file = File('${output.path}/Invoice_${invoice.invoiceId}.pdf');
     await file.writeAsBytes(await pdf.save());
 
@@ -316,6 +404,11 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         title: Text('Sales Invoices'),
         actions: [
           IconButton(icon: Icon(Icons.calendar_today), onPressed: _selectDate),
+          IconButton(
+            icon: Icon(Icons.clear),
+            onPressed: _clearFilters,
+            tooltip: 'Clear Filters',
+          ),
         ],
       ),
       body: Consumer<AppState>(
@@ -329,13 +422,20 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                 final matchesDate =
                     inv.postingDate ==
                     DateFormat('yyyy-MM-dd').format(selectedDate);
-                final matchesSearch = inv.customer.toLowerCase().contains(
-                  searchQuery,
-                );
+                final matchesSearch = inv.customer.customerName
+                    .toLowerCase()
+                    .contains(searchQuery);
                 final matchesStatus =
                     statusFilter == null || inv.status == statusFilter;
+                print(
+                  'Filtering invoice ${inv.invoiceId}: '
+                  'matchesDate=$matchesDate (postingDate=${inv.postingDate}, selectedDate=${DateFormat('yyyy-MM-dd').format(selectedDate)}), '
+                  'matchesSearch=$matchesSearch, matchesStatus=$matchesStatus',
+                );
                 return matchesDate && matchesSearch && matchesStatus;
               }).toList();
+
+          print('Filtered invoices count: ${filtered.length}');
 
           return Column(
             children: [
@@ -364,7 +464,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                       hint: Text('Filter by status'),
                       isExpanded: true,
                       items:
-                          ['Paid', 'Unpaid', 'Partly Paid']
+                          ['Paid', 'Unpaid', 'Partly Paid', 'Overdue']
                               .map(
                                 (status) => DropdownMenuItem(
                                   value: status,
@@ -382,7 +482,10 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                                                   : status.toLowerCase() ==
                                                       'unpaid'
                                                   ? Colors.red
-                                                  : Colors.blue,
+                                                  : status.toLowerCase() ==
+                                                      'partly paid'
+                                                  ? Colors.blue
+                                                  : Colors.deepOrange,
                                         ),
                                       ),
                                       Text(status),

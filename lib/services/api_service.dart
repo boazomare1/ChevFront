@@ -9,7 +9,6 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
 class ApiService {
-  
   final String baseUrl =
       'https://chevenergies.techsavanna.technology/api/method';
   String? token;
@@ -69,14 +68,18 @@ class ApiService {
       }),
     );
 
-    print("From Invoice List {${response.body}");
+    print("From Invoice List {${response.body}}");
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final invoices = data['invoices'] as List;
-      return invoices.map((json) => Invoice.fromJson(json)).toList();
+      if (data['status'] == 200) {
+        final invoices = data['data'] as List<dynamic>? ?? [];
+        return invoices.map((json) => Invoice.fromJson(json)).toList();
+      } else {
+        throw Exception('API error: ${data['message']}');
+      }
     } else {
-      throw Exception('Failed to fetch invoices');
+      throw Exception('Failed to fetch invoices: HTTP ${response.statusCode}');
     }
   }
 
@@ -125,7 +128,7 @@ class ApiService {
     }
   }
 
-  Future<List<RouteData>> getRoutes(String day,String routeId) async {
+  Future<List<RouteData>> getRoutes(String day, String routeId) async {
     final response = await http.post(
       Uri.parse('$baseUrl/route_plan.apis.route.get_salesman_routes_for_day'),
       headers: {
@@ -283,80 +286,81 @@ class ApiService {
   }
 
   Future<List<String>> listTerritories() async {
-  final response = await http.get(
-    Uri.parse('$baseUrl/route_plan.apis.manage.list_territories'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-  );
+    final response = await http.get(
+      Uri.parse('$baseUrl/route_plan.apis.manage.list_territories'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return List<String>.from(data['territories'].map((t) => t['territory_name']));
-  } else {
-    throw Exception('Failed to fetch territories: ${response.body}');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<String>.from(
+        data['territories'].map((t) => t['territory_name']),
+      );
+    } else {
+      throw Exception('Failed to fetch territories: ${response.body}');
+    }
   }
-}
 
-Future<Map<String, dynamic>> createCustomer({
-  required String customerName,
-  required String customerType,
-  required String territory,
-}) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/route_plan.apis.manage.create_customer'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-    body: jsonEncode({
-      'customer_name': customerName,
-      'customer_type': customerType,
-      'territory': territory,
-    }),
-  );
+  Future<Map<String, dynamic>> createCustomer({
+    required String customerName,
+    required String customerType,
+    required String territory,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/route_plan.apis.manage.create_customer'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'customer_name': customerName,
+        'customer_type': customerType,
+        'territory': territory,
+      }),
+    );
 
-  if (response.statusCode == 201) {
-    return jsonDecode(response.body)['data'];
-  } else {
-    throw Exception('Failed to create customer: ${response.body}');
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body)['data'];
+    } else {
+      throw Exception('Failed to create customer: ${response.body}');
+    }
   }
-}
 
-Future<void> createShop({
-  required String shopName,
-  required String customerId,
-  required String phone,
-  required String email,
-  required String countyName,
-  required String townName,
-  required double latitude,
-  required double longitude,
-  required String logoBase64,
-}) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/route_plan.apis.manage.create_shop'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-    body: jsonEncode({
-      'shop_name': shopName,
-      'customer': customerId,
-      'phone': phone,
-      'email': email,
-      'county_name': countyName,
-      'town_name': townName,
-      'latitude': latitude.toString(),
-      'longitude': longitude.toString(),
-      'logo': logoBase64,
-    }),
-  );
+  Future<void> createShop({
+    required String shopName,
+    required String customerId,
+    required String phone,
+    required String email,
+    required String countyName,
+    required String townName,
+    required double latitude,
+    required double longitude,
+    required String logoBase64,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/route_plan.apis.manage.create_shop'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'shop_name': shopName,
+        'customer': customerId,
+        'phone': phone,
+        'email': email,
+        'county_name': countyName,
+        'town_name': townName,
+        'latitude': latitude.toString(),
+        'longitude': longitude.toString(),
+        'logo': logoBase64,
+      }),
+    );
 
-  if (response.statusCode != 200 && response.statusCode != 201) {
-    throw Exception('Failed to create shop: ${response.body}');
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to create shop: ${response.body}');
+    }
   }
-}
-
 }
