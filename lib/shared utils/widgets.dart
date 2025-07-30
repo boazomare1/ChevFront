@@ -151,7 +151,7 @@ class _StyledSelectFieldState<T> extends State<StyledSelectField<T>> {
                   TextField(
                     controller: _searchCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'Search products',
+                      labelText: 'Search .... ',
                       prefixIcon: Icon(Icons.search),
                       border: OutlineInputBorder(),
                     ),

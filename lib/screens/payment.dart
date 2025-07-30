@@ -1,11 +1,10 @@
 import 'dart:io';
-
 import 'package:chevenergies/services/app_state.dart';
 import 'package:chevenergies/shared%20utils/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-
+import 'dart:convert';
 class PaymentScreen extends StatefulWidget {
   final String invoiceId;
   final double totalAmount;

@@ -1,3 +1,4 @@
+import 'package:chevenergies/screens/add_customer.dart';
 import 'package:chevenergies/screens/customers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -15,7 +16,10 @@ class NewSaleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final today = DateFormat('EEEE').format(DateTime.now()).toLowerCase(); // e.g. 'monday'
+    final today =
+        DateFormat(
+          'EEEE',
+        ).format(DateTime.now()).toLowerCase(); // e.g. 'monday'
 
     final items = <_ActionItem>[
       _ActionItem(
@@ -24,9 +28,7 @@ class NewSaleScreen extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => CustomersScreen(day: today),
-            ),
+            MaterialPageRoute(builder: (_) => CustomersScreen(day: today)),
           );
         },
       ),
@@ -38,7 +40,12 @@ class NewSaleScreen extends StatelessWidget {
       _ActionItem(
         label: 'New Customer',
         iconPath: 'assets/add-user.png',
-        onTap: () => _onNewCustomer(context),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => AddCustomerScreen()),
+          );
+        },
       ),
       const _ActionItem(label: '', iconPath: '', onTap: null),
     ];
@@ -88,56 +95,60 @@ class NewSaleScreen extends StatelessWidget {
           child: Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: items.map((item) {
-              if (item.label.isEmpty) {
-                return SizedBox(
-                  width: MediaQuery.of(context).size.width / 2 - 20,
-                  height: 150,
-                );
-              }
-              return SizedBox(
-                width: MediaQuery.of(context).size.width / 2 - 20,
-                height: 150,
-                child: Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(6),
-                    onTap: item.onTap,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          item.iconPath,
-                          width: 50,
-                          height: 50,
-                          errorBuilder: (ctx, e, st) =>
-                              const Icon(Icons.image_not_supported, size: 50),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          item.label,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.black,
-                            letterSpacing: 0.2,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black26,
-                                offset: Offset(0, 6),
-                                blurRadius: 4,
+            children:
+                items.map((item) {
+                  if (item.label.isEmpty) {
+                    return SizedBox(
+                      width: MediaQuery.of(context).size.width / 2 - 20,
+                      height: 150,
+                    );
+                  }
+                  return SizedBox(
+                    width: MediaQuery.of(context).size.width / 2 - 20,
+                    height: 150,
+                    child: Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: item.onTap,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              item.iconPath,
+                              width: 50,
+                              height: 50,
+                              errorBuilder:
+                                  (ctx, e, st) => const Icon(
+                                    Icons.image_not_supported,
+                                    size: 50,
+                                  ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              item.label,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                letterSpacing: 0.2,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black26,
+                                    offset: Offset(0, 6),
+                                    blurRadius: 4,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
         ),
       ),

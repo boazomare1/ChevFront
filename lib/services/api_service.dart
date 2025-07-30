@@ -281,4 +281,82 @@ class ApiService {
 
     return distanceKm;
   }
+
+  Future<List<String>> listTerritories() async {
+  final response = await http.get(
+    Uri.parse('$baseUrl/route_plan.apis.manage.list_territories'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return List<String>.from(data['territories'].map((t) => t['territory_name']));
+  } else {
+    throw Exception('Failed to fetch territories: ${response.body}');
+  }
+}
+
+Future<Map<String, dynamic>> createCustomer({
+  required String customerName,
+  required String customerType,
+  required String territory,
+}) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/route_plan.apis.manage.create_customer'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({
+      'customer_name': customerName,
+      'customer_type': customerType,
+      'territory': territory,
+    }),
+  );
+
+  if (response.statusCode == 201) {
+    return jsonDecode(response.body)['data'];
+  } else {
+    throw Exception('Failed to create customer: ${response.body}');
+  }
+}
+
+Future<void> createShop({
+  required String shopName,
+  required String customerId,
+  required String phone,
+  required String email,
+  required String countyName,
+  required String townName,
+  required double latitude,
+  required double longitude,
+  required String logoBase64,
+}) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/route_plan.apis.manage.create_shop'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({
+      'shop_name': shopName,
+      'customer': customerId,
+      'phone': phone,
+      'email': email,
+      'county_name': countyName,
+      'town_name': townName,
+      'latitude': latitude.toString(),
+      'longitude': longitude.toString(),
+      'logo': logoBase64,
+    }),
+  );
+
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw Exception('Failed to create shop: ${response.body}');
+  }
+}
+
 }

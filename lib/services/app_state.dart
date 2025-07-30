@@ -22,16 +22,22 @@ class AppState with ChangeNotifier {
     notifyListeners();
   }
 
-   Future<List<RouteData>> getRoutes(String day) async {
+  Future<List<RouteData>> getRoutes(String day) async {
     if (user == null || user!.routes.isEmpty) {
       return [];
     }
     final routeId = user!.routes.first.routeId;
     return await apiService.getRoutes(day, routeId);
   }
+
   Future<List<Item>> listItems(String routeId) => apiService.listItems(routeId);
 
-  Future<Map<String, dynamic>> raiseInvoice(String routeId, String stopId, String day, List<Item> items) async {
+  Future<Map<String, dynamic>> raiseInvoice(
+    String routeId,
+    String stopId,
+    String day,
+    List<Item> items,
+  ) async {
     final data = await apiService.raiseInvoice(routeId, stopId, day, items);
     return data;
   }
@@ -88,10 +94,50 @@ class AppState with ChangeNotifier {
     notifyListeners();
   }
 
-
   Future<Invoice> getInvoiceById(String invoiceId) {
-  return apiService.getInvoiceById(invoiceId);
-}
+    return apiService.getInvoiceById(invoiceId);
+  }
 
-  
+  // 🔹 New: List Territories
+  Future<List<String>> listTerritories() {
+    return apiService.listTerritories();
+  }
+
+  // 🔹 New: Create Customer
+  Future<Map<String, dynamic>> createCustomer({
+    required String name,
+    required String type,
+    required String territory,
+  }) {
+    return apiService.createCustomer(
+      customerName: name,
+      customerType: type,
+      territory: territory,
+    );
+  }
+
+  // 🔹 New: Create Shop
+  Future<void> createShop({
+    required String shopName,
+    required String customerId,
+    required String phone,
+    required String email,
+    required String county,
+    required String town,
+    required double latitude,
+    required double longitude,
+    required String logoBase64,
+  }) {
+    return apiService.createShop(
+      shopName: shopName,
+      customerId: customerId,
+      phone: phone,
+      email: email,
+      countyName: county,
+      townName: town,
+      latitude: latitude,
+      longitude: longitude,
+      logoBase64: logoBase64,
+    );
+  }
 }
