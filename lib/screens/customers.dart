@@ -1,6 +1,8 @@
 import 'package:chevenergies/models/stop.dart';
+import 'package:chevenergies/screens/add_customer.dart';
 import 'package:chevenergies/screens/make_sale.dart';
 import 'package:chevenergies/shared utils/extension.dart';
+import 'package:chevenergies/shared%20utils/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +23,9 @@ class _CustomersScreenState extends State<CustomersScreen> {
   String? _error;
   Position? _currentPosition;
 
+  // NEW: Track completed stops locally
+  final Set<String> _servedStopIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +39,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
     });
 
     try {
-      // permissions + position
       await _handlePermissions();
       _currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.best,
@@ -54,8 +58,14 @@ class _CustomersScreenState extends State<CustomersScreen> {
           _stopToRouteMap[stop.name] = route.routeId;
         }
       }
+
+      // sort by idx
+      _stops.sort((a, b) => a.idx.compareTo(b.idx));
     } catch (e) {
-      _error = 'Failed to load customers: $e';
+      showDialog(
+        context: context,
+        builder: (_) => ErrorDialog(message: 'Failed to load Customers'),
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -80,17 +90,65 @@ class _CustomersScreenState extends State<CustomersScreen> {
     }
   }
 
+  void _handleServeStop(Stop stop) {
+    final routeId = _stopToRouteMap[stop.name] ?? 'unknown';
+
+    // Find the lowest unserved stop
+    final nextStop = _stops.firstWhere(
+      (s) => !_servedStopIds.contains(s.name),
+      orElse: () => stop,
+    );
+
+    if (stop.name != nextStop.name) {
+      _showOutOfOrderDialog(nextStop.shop);
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (_) => MakeSaleScreen(
+              shopName: stop.shop,
+              routeId: routeId,
+              stopId: stop.name,
+              day: widget.day,
+              stopLat: stop.latitude, 
+              stopLng: stop.longitude,
+              onComplete: () {
+                setState(() {
+                  _servedStopIds.add(stop.name);
+                });
+              },
+            ),
+      ),
+    );
+  }
+
+  void _showOutOfOrderDialog(String correctCustomer) {
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Serve in Order'),
+            content: Text('Please serve $correctCustomer first.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // no AppBar
       body: Column(
         children: [
-          // Green top stripe
           Container(height: 60, color: const Color(0xFF228B22)),
           const SizedBox(height: 10),
-
-          // Title + underline
           Center(
             child: Column(
               children: [
@@ -103,10 +161,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
               ],
             ),
           ),
-
           const SizedBox(height: 10),
-
-          // Content
           Expanded(
             child: RefreshIndicator(
               onRefresh: _initLocationAndData,
@@ -128,7 +183,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                                 (ctx, i) => _buildCustomerCard(_stops[i]),
                           ),
                           if (_isLoading)
-                            Positioned(
+                            const Positioned(
                               top: 10,
                               right: 10,
                               child: SizedBox(
@@ -148,9 +203,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: navigate to Add Customer screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => AddCustomerScreen()),
+          );
         },
-        backgroundColor: const Color(0xFF228B22),
+        backgroundColor: Colors.pinkAccent,
         child: const Icon(Icons.add, size: 30),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -159,9 +217,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   Widget _buildCustomerCard(Stop stop) {
     const placeholderAsset = 'assets/gas-cylinder.png';
-
-    // compute distance
     String distanceLabel = '—';
+
     if (_currentPosition != null) {
       final km = haversineDistanceKm(
         lat1: _currentPosition!.latitude,
@@ -183,7 +240,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              // fixed-size image slot
               SizedBox(
                 width: 60,
                 height: 60,
@@ -193,8 +249,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-
-              // indicator rail
               Column(
                 children: [
                   const Icon(Icons.circle, size: 6, color: Colors.blue),
@@ -215,13 +269,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 ],
               ),
               const SizedBox(width: 12),
-
-              // main info + phone/button
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // shop + distance uppercase & bold
                     Text(
                       '${stop.shop.toUpperCase()} (${distanceLabel} KM)',
                       style: const TextStyle(
@@ -231,7 +282,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    // town only uppercase
                     Text(
                       stop.townName.toUpperCase(),
                       style: const TextStyle(
@@ -241,7 +291,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    // phone + Next button
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -257,21 +306,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                           ),
                         ),
                         ElevatedButton(
-                          onPressed: () {
-                            final routeId = _stopToRouteMap[stop.name] ?? 'unknown';
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => MakeSaleScreen(
-                                      shopName: stop.shop,
-                                      routeId: routeId,
-                                      stopId: stop.name,
-                                      day: widget.day,
-                                    ),
-                              ),
-                            );
-                          },
+                          onPressed: () => _handleServeStop(stop),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.pinkAccent,
                             minimumSize: const Size(64, 32),

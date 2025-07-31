@@ -69,7 +69,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     } catch (e) {
       showDialog(
         context: context,
-        builder: (_) => ErrorDialog(message: e.toString()),
+        builder: (_) => ErrorDialog(message: 'Payment Completion failed'),
       );
     } finally {
       setState(() => _loading = false);
@@ -153,7 +153,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ElevatedButton(
                   onPressed: _submitPayment,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: Colors.pinkAccent,
                     minimumSize: const Size.fromHeight(50),
                   ),
                   child: const Text('Finish Payment'),

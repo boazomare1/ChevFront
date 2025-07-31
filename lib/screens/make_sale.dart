@@ -1,6 +1,7 @@
 import 'package:chevenergies/models/item.dart';
 import 'package:chevenergies/screens/payment.dart';
 import 'package:chevenergies/services/app_state.dart';
+import 'package:chevenergies/shared%20utils/extension.dart';
 import 'package:chevenergies/shared%20utils/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -11,6 +12,9 @@ class MakeSaleScreen extends StatefulWidget {
   final String routeId;
   final String stopId;
   final String day;
+  final double stopLat;
+  final double stopLng;
+  final VoidCallback? onComplete;
 
   const MakeSaleScreen({
     super.key,
@@ -18,6 +22,9 @@ class MakeSaleScreen extends StatefulWidget {
     required this.routeId,
     required this.stopId,
     required this.day,
+    required this.stopLat,
+    required this.stopLng,
+    required this.onComplete,
   });
 
   @override
@@ -25,6 +32,8 @@ class MakeSaleScreen extends StatefulWidget {
 }
 
 class _MakeSaleScreenState extends State<MakeSaleScreen> {
+  late double _distanceMeters;
+  bool _inRange = false;
   List<Map<String, dynamic>> saleItems = [];
   Position? _currentPosition;
   String? _notAttendingReason;
@@ -48,137 +57,179 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
   @override
   void initState() {
     super.initState();
-    _initLocation();
   }
 
-  Future<void> _initLocation() async {
+  Future<bool> _ensureInRange() async {
     try {
       _currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.best,
       );
-    } catch (_) {}
+      final km = haversineDistanceKm(
+        lat1: _currentPosition!.latitude,
+        lng1: _currentPosition!.longitude,
+        lat2: widget.stopLat,
+        lng2: widget.stopLng,
+      );
+      final meters = km * 1000;
+      if (meters > 50) {
+        await showDialog(
+          context: context,
+          builder:
+              (_) => ErrorDialog(message: 'Please Move closer to the Shop'),
+        );
+        return false;
+      }
+      return true;
+    } catch (_) {
+      // Could not get location
+      await showDialog(
+        context: context,
+        builder:
+            (_) => AlertDialog(
+              title: const Text('Location Error'),
+              content: const Text('Unable to determine your location.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+      );
+      return false;
+    }
   }
 
   Future<void> showAddProductDialog() async {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => const Center(
-      child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-      ),
-    ),
-  );
-
-  try {
-    final items = await Provider.of<AppState>(
-      context,
-      listen: false,
-    ).listItems(widget.routeId);
-
-    Navigator.pop(context); // Close loader
-
-    Item? selected;
-    final searchCtrl = TextEditingController();
-    final qtyCtrl = TextEditingController(text: '1');
-    final discCtrl = TextEditingController(text: '0');
-    bool applyDisc = false;
-
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Add Product'),
-        content: StatefulBuilder(
-          builder: (ctx, setInner) {
-            List<Item> filtered = items.where((i) {
-              final name = i.itemName ?? '';
-              final query = searchCtrl.text;
-              return name.toLowerCase().contains(query.toLowerCase());
-            }).toList();
-
-            return Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.all(12),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    StyledSelectField<Item>(
-                      label: 'Choose Product',
-                      items: items,
-                      selected: selected,
-                      onChanged: (item) => setInner(() => selected = item),
-                      displayString: (item) =>
-                          '${item.itemName} (Ksh ${item.sellingPrice})',
-                    ),
-                    const SizedBox(height: 12),
-                    StyledTextField(
-                      label: 'Quantity',
-                      controller: qtyCtrl,
-                      keyboardType: TextInputType.number,
-                    ),
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Apply discount?'),
-                      value: applyDisc,
-                      onChanged: (v) => setInner(() => applyDisc = v ?? false),
-                    ),
-                    if (applyDisc)
-                      StyledTextField(
-                        label: 'Discount (Ksh)',
-                        controller: discCtrl,
-                        keyboardType: TextInputType.number,
-                      ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('CANCEL'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (selected != null) {
-                final q = int.tryParse(qtyCtrl.text) ?? 1;
-                final d = double.tryParse(discCtrl.text) ?? 0.0;
-                setState(() {
-                  saleItems.add({
-                    'itemCode': selected!.itemCode,
-                    'name': selected!.itemName,
-                    'price': selected!.sellingPrice,
-                    'qty': q,
-                    'discount': applyDisc
-                        ? d.clamp(0, selected!.sellingPrice as num)
-                        : 0.0,
-                  });
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('ADD'),
-          ),
-        ],
-      ),
-    );
-  } catch (e) {
-    Navigator.pop(context); // Close loader
+    if (!await _ensureInRange()) return;
     showDialog(
       context: context,
-      builder: (_) => ErrorDialog(
-        message: 'Failed to load products:\n${e.toString()}',
-      ),
+      barrierDismissible: false,
+      builder:
+          (_) => const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+            ),
+          ),
     );
+
+    try {
+      final items = await Provider.of<AppState>(
+        context,
+        listen: false,
+      ).listItems(widget.routeId);
+
+      Navigator.pop(context); // Close loader
+
+      Item? selected;
+      final searchCtrl = TextEditingController();
+      final qtyCtrl = TextEditingController(text: '1');
+      final discCtrl = TextEditingController(text: '0');
+      bool applyDisc = false;
+
+      await showDialog(
+        context: context,
+        builder:
+            (_) => AlertDialog(
+              title: const Text('Add Product'),
+              content: StatefulBuilder(
+                builder: (ctx, setInner) {
+                  List<Item> filtered =
+                      items.where((i) {
+                        final name = i.itemName ?? '';
+                        final query = searchCtrl.text;
+                        return name.toLowerCase().contains(query.toLowerCase());
+                      }).toList();
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          StyledSelectField<Item>(
+                            label: 'Choose Product',
+                            items: items,
+                            selected: selected,
+                            onChanged:
+                                (item) => setInner(() => selected = item),
+                            displayString:
+                                (item) =>
+                                    '${item.itemName} (Ksh ${item.sellingPrice})',
+                          ),
+                          const SizedBox(height: 12),
+                          StyledTextField(
+                            label: 'Quantity',
+                            controller: qtyCtrl,
+                            keyboardType: TextInputType.number,
+                          ),
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Apply discount?'),
+                            value: applyDisc,
+                            onChanged:
+                                (v) => setInner(() => applyDisc = v ?? false),
+                          ),
+                          if (applyDisc)
+                            StyledTextField(
+                              label: 'Discount (Ksh)',
+                              controller: discCtrl,
+                              keyboardType: TextInputType.number,
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('CANCEL'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (selected != null) {
+                      final q = int.tryParse(qtyCtrl.text) ?? 1;
+                      final d = double.tryParse(discCtrl.text) ?? 0.0;
+                      setState(() {
+                        saleItems.add({
+                          'itemCode': selected!.itemCode,
+                          'name': selected!.itemName,
+                          'price': selected!.sellingPrice,
+                          'qty': q,
+                          'discount':
+                              applyDisc
+                                  ? d.clamp(0, selected!.sellingPrice as num)
+                                  : 0.0,
+                        });
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('ADD'),
+                ),
+              ],
+            ),
+      );
+    } catch (e) {
+      Navigator.pop(context); // Close loader
+      showDialog(
+        context: context,
+        builder:
+            (_) => ErrorDialog(
+              message: 'Failed to load products:\n${e.toString()}',
+            ),
+      );
+    }
   }
-}
 
   Future<void> _askNotAttending() async {
+    if (!await _ensureInRange()) return;
     String? selectedReason;
 
     await showDialog(
@@ -242,16 +293,25 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
 
                     Navigator.pop(context); // Close loader
 
-                    showDialog(
+                    builder:
+                    (_) => SuccessDialog(
+                      message: 'Ticket raised successfully!',
+                      onClose: () {
+                        Navigator.pop(context); // Close success dialog
+                        Navigator.pop(context); // Pop MakeSaleScreen
+                        widget.onComplete?.call(); // ✅ Notify parent
+                      },
+                    );
+
+                    // Show success and wait for dialog to close
+                    await showDialog(
                       context: context,
                       builder:
                           (_) => SuccessDialog(
                             message: 'Ticket raised successfully!',
                             onClose: () {
-                              Navigator.pop(context); // Close success dialog
-                              Navigator.pop(
-                                context,
-                              ); // Go back to customers list
+                              Navigator.pop(context); // Close dialog
+                              widget.onComplete?.call(); // ✅ Notify parent
                             },
                           ),
                     );
@@ -275,6 +335,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
   }
 
   void _submitInvoice() async {
+    if (!await _ensureInRange()) return;
     final state = Provider.of<AppState>(context, listen: false);
 
     showDialog(
@@ -298,7 +359,9 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
               quantity: (e['qty'] as int).toDouble(),
               warehouse: '',
               sellingPrice: e['price'] as double,
-              amount: ((e['price'] as double) - e['discount']) * (e['qty'] as int), // Adjust for fixed discount
+              amount:
+                  ((e['price'] as double) - e['discount']) *
+                  (e['qty'] as int), // Adjust for fixed discount
             );
           }).toList();
 
@@ -317,7 +380,10 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
         builder:
             (_) => SuccessDialog(
               message: 'Invoice raised successfully!',
-              onClose: () => Navigator.pop(context), // Just close the dialog
+              onClose: () {
+                Navigator.pop(context); // Close dialog
+                widget.onComplete?.call(); // ✅ Notify parent
+              },
             ),
       );
 
@@ -357,7 +423,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            color: Colors.green,
+            color: Colors.pinkAccent,
           ),
         ),
       ),
@@ -386,7 +452,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
               child: Text(
                 'Sale Items',
                 style: TextStyle(
-                  color: Colors.green,
+                  color: Colors.pinkAccent,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -464,7 +530,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
             const Text(
               'Payment Status',
               style: TextStyle(
-                color: Colors.green,
+                color: Colors.pinkAccent,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -547,7 +613,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
               ElevatedButton(
                 onPressed: _submitInvoice,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: Colors.pinkAccent,
                   minimumSize: const Size.fromHeight(50),
                 ),
                 child: const Text(
@@ -561,7 +627,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: showAddProductDialog,
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.pinkAccent,
         child: const Icon(Icons.add, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,

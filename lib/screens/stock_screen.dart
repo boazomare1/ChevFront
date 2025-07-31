@@ -376,7 +376,7 @@ class _StockScreenState extends State<StockScreen> {
             const SnackBar(content: Text('Add new item feature coming soon!')),
           );
         },
-        backgroundColor: Colors.green[700],
+        backgroundColor: Colors.pinkAccent,
         child: const Icon(Icons.add),
       ),
     );
