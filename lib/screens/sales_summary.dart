@@ -35,24 +35,47 @@ class _SalesSummaryScreenState extends State<SalesSummaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          Container(
-            color: Colors.green[800],
-            padding: const EdgeInsets.only(top: 50, bottom: 16),
-            width: double.infinity,
-            child: const Column(
-              children: [
-                Text('SUMMARY',
-                    style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                SizedBox(height: 4),
-                Text('―', style: TextStyle(color: Colors.white, fontSize: 18)),
-              ],
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF228B22),
+        elevation: 0,
+        leading: IconButton(
+          padding: const EdgeInsets.all(10),
+          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'SUMMARY',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 0.2,
+            shadows: [
+              Shadow(
+                color: Colors.black26,
+                offset: Offset(0, 6),
+                blurRadius: 4,
+              ),
+            ],
+          ),
+        ),
+        centerTitle: true,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(20),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: SizedBox(
+              width: 70,
+              height: 1,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: Colors.white),
+              ),
             ),
           ),
-          const SizedBox(height: 12),
+        ),
+      ),
+      body: Column(
+        children: [
           Card(
             margin: const EdgeInsets.all(12),
             shape: RoundedRectangleBorder(

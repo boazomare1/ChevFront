@@ -379,6 +379,7 @@ class _StockScreenState extends State<StockScreen> {
         backgroundColor: Colors.pinkAccent,
         child: const Icon(Icons.add),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

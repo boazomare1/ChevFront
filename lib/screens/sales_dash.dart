@@ -8,33 +8,47 @@ class SalesSummaryDashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            color: Colors.green,
-            padding: EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () {},
-                ),
-                Expanded(
-                  child: Text(
-                    'SALES SUMMARY',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF228B22),
+        elevation: 0,
+        leading: IconButton(
+          padding: const EdgeInsets.all(10),
+          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Sales Summary',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 0.2,
+            shadows: [
+              Shadow(
+                color: Colors.black26,
+                offset: Offset(0, 6),
+                blurRadius: 4,
+              ),
+            ],
+          ),
+        ),
+        centerTitle: true,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(20),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: SizedBox(
+              width: 70,
+              height: 1,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: Colors.white),
+              ),
             ),
           ),
+        ),
+      ),
+      body: Column(
+        children: [
           Expanded(
             child: Center(
               child: Row(

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chevenergies/services/app_state.dart';
 import 'package:chevenergies/shared utils/widgets.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:chevenergies/screens/add_shop.dart';
 import 'package:flutter/services.dart';
 
