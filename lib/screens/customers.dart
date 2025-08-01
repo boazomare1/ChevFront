@@ -113,7 +113,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
               routeId: routeId,
               stopId: stop.name,
               day: widget.day,
-              stopLat: stop.latitude, 
+              stopLat: stop.latitude,
               stopLng: stop.longitude,
               onComplete: () {
                 setState(() {
@@ -145,23 +145,47 @@ class _CustomersScreenState extends State<CustomersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          Container(height: 60, color: const Color(0xFF228B22)),
-          const SizedBox(height: 10),
-          Center(
-            child: Column(
-              children: [
-                const Text(
-                  'CUSTOMERS',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Container(width: 70, height: 2, color: Colors.black),
-              ],
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF228B22),
+        elevation: 0,
+        leading: IconButton(
+          padding: const EdgeInsets.all(10),
+          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'CUSTOMERS TO SERVE ',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.2,
+            shadows: [
+              Shadow(
+                color: Colors.black26,
+                offset: Offset(0, 6),
+                blurRadius: 4,
+              ),
+            ],
+          ),
+        ),
+        centerTitle: true,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(20),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: SizedBox(
+              width: 70,
+              height: 1,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: Colors.white),
+              ),
             ),
           ),
-          const SizedBox(height: 10),
+        ),
+      ),
+
+      body: Column(
+        children: [
           Expanded(
             child: RefreshIndicator(
               onRefresh: _initLocationAndData,
@@ -174,28 +198,24 @@ class _CustomersScreenState extends State<CustomersScreen> {
                           style: const TextStyle(color: Colors.red),
                         ),
                       )
-                      : Stack(
-                        children: [
-                          ListView.builder(
-                            padding: const EdgeInsets.only(bottom: 100),
-                            itemCount: _stops.length,
-                            itemBuilder:
-                                (ctx, i) => _buildCustomerCard(_stops[i]),
+                      : _isLoading
+                      ? const Center(
+                        child: CircularProgressIndicator(color: Colors.red),
+                      )
+                      : _stops.isEmpty
+                      ? const Center(
+                        child: Text(
+                          'No Customers to be served.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
-                          if (_isLoading)
-                            const Positioned(
-                              top: 10,
-                              right: 10,
-                              child: SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ),
-                        ],
+                        ),
+                      )
+                      : ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 100),
+                        itemCount: _stops.length,
+                        itemBuilder: (ctx, i) => _buildCustomerCard(_stops[i]),
                       ),
             ),
           ),

@@ -130,7 +130,7 @@ class _AddShopScreenState extends State<AddShopScreen> {
       setState(() => loading = false);
       showDialog(
         context: context,
-        builder: (_) => ErrorDialog(message: "Failed to create shop: $e"),
+        builder: (_) => ErrorDialog(message: "Failed to create shop"),
       );
     }
   }
