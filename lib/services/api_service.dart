@@ -8,6 +8,7 @@ import 'package:chevenergies/models/user.dart';
 import 'package:chevenergies/shared%20utils/extension.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 
 class ApiService {
   final String baseUrl =
@@ -311,7 +312,7 @@ class ApiService {
         'payment_methods': paymentMethods,
       }),
     );
-   print("From Create Customer {${response.body}}");
+    print("From Create Customer {${response.body}}");
     if (response.statusCode == 201) {
       return jsonDecode(response.body)['data'];
     } else {
@@ -353,33 +354,46 @@ class ApiService {
       throw Exception('Failed to create shop: ${response.body}');
     }
   }
+
   Future<Map<String, dynamic>> raiseExpenseRequest({
-    required String routeId,
     required double amount,
     required String description,
     required String date,
     String? receiptImage,
+    required String routeId,
   }) async {
+    final DateTime parsedDate = DateTime.parse(date);
+    final String day = DateFormat('EEEE').format(parsedDate);
+
+    final Map<String, dynamic> requestBody = {
+      "route_id": routeId,
+      "day": day,
+      "date": date,
+      "name": "Expense Request",
+      "requestedAmount": amount.toString(),
+      "approvedAmount": "0",
+      "comments": description,
+      "status": "Pending",
+      "receipt": receiptImage != null ? "data:image/" : null,
+      "receipt_image":
+          receiptImage != null
+              ? base64Encode(File(receiptImage).readAsBytesSync())
+              : null,
+    };
+
     final response = await http.post(
-      Uri.parse('$baseUrl/route_plan.apis.expense.raise_expense_request'),
+      Uri.parse('$baseUrl/route_plan.apis.manage.raise_expense_request'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'route_id': routeId,
-        'amount': amount.toString(),
-        'description': description,
-        'date': date,
-        'receipt_image': receiptImage != null ? base64Encode(File(receiptImage).readAsBytesSync()) : null,
-      }),
+      body: jsonEncode(requestBody),
     );
 
     print("From Raise Expense Request {${response.body}}");
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      return data;
+      return jsonDecode(response.body);
     } else {
       throw Exception('Failed to raise expense request: ${response.body}');
     }
@@ -394,7 +408,7 @@ class ApiService {
     int pageLength = 20,
   }) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/route_plan.apis.expense.list_expense_requests'),
+      Uri.parse('$baseUrl/route_plan.apis.manage.list_expenditure_requests'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -419,7 +433,9 @@ class ApiService {
         throw Exception('API error: ${data['message']}');
       }
     } else {
-      throw Exception('Failed to fetch expense requests: HTTP ${response.statusCode}');
+      throw Exception(
+        'Failed to fetch expense requests: HTTP ${response.statusCode}',
+      );
     }
   }
 

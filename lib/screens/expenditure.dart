@@ -2,7 +2,9 @@
 import 'package:chevenergies/forms/raise_expense.dart';
 import 'package:chevenergies/models/expenditure.dart';
 import 'package:chevenergies/screens/expenditure_detail.dart';
+import 'package:chevenergies/services/app_state.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ExpenditureScreen extends StatefulWidget {
   const ExpenditureScreen({super.key});
@@ -12,15 +14,44 @@ class ExpenditureScreen extends StatefulWidget {
 }
 
 class _ExpenditureScreenState extends State<ExpenditureScreen> {
+  DateTime selectedDate = DateTime.now();
   final List<Expenditure> _expenditures = [];
 
   bool _loading = false;
+  @override
+  void initState() {
+    super.initState();
+    _loadExpenditures();
+  }
 
   Future<void> _refresh() async {
     setState(() => _loading = true);
-    // TODO: fetch data from API
+    _loadExpenditures();
     await Future.delayed(const Duration(seconds: 1));
     setState(() => _loading = false);
+  }
+
+  void _loadExpenditures() {
+    final appState = Provider.of<AppState>(context, listen: false);
+    appState
+        .listExpenseRequests(
+          routeId: "KDQ 154P",
+          startDate: selectedDate.toString(),
+          endDate: selectedDate.toString(),
+        )
+        .then((expenses) {
+          debugPrint('Raw expenses data: $expenses');
+          setState(() {
+            _expenditures.clear();
+            // Convert the raw JSON data to Expenditure objects
+            _expenditures.addAll(
+              expenses.map((json) => Expenditure.fromJson(json)).toList(),
+            );
+          });
+        })
+        .catchError((error) {
+          debugPrint('Error loading expenditures: $error');
+        });
   }
 
   void _addExpenditure() {
@@ -37,23 +68,33 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         backgroundColor: Colors.pinkAccent,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          'EXPENDITURE',
-          style: TextStyle(color: Colors.white, letterSpacing: 0.2),
+          'EXPENDITURES',
+          style: TextStyle(
+            color: Colors.white,
+            letterSpacing: 0.5,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         elevation: 0,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_today),
+            onPressed: _showDatePicker,
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // decorative white divider (80dp × 2dp)
-          const SizedBox(height: 15),
-          Center(child: Container(width: 80, height: 2, color: Colors.white)),
-          const SizedBox(height: 20),
+          // Header section with date and summary
+          _buildHeaderSection(),
 
-          // list with pull-to-refresh
+          // List with pull-to-refresh
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refresh,
@@ -62,35 +103,11 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
                       ? _buildEmptyState()
                       : ListView.builder(
                         physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
                         itemCount: _expenditures.length,
                         itemBuilder: (_, i) {
                           final exp = _expenditures[i];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 6,
-                            ),
-                            child: ListTile(
-                              leading: const Icon(Icons.attach_money),
-                              title: Text(exp.name),
-                              subtitle: Text('${exp.date} • ${exp.status}'),
-                              trailing: const Icon(
-                                Icons.arrow_forward_ios,
-                                size: 16,
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => ExpenditureDetailScreen(
-                                          expenditure: exp,
-                                        ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
+                          return _buildExpenditureCard(exp);
                         },
                       ),
             ),
@@ -98,13 +115,329 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
         ],
       ),
 
-      // centered bottom FAB
+      // Modern FAB
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.pinkAccent,
-        foregroundColor: Colors.white,
-        onPressed: _addExpenditure,
-        child: const Icon(Icons.add),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.pinkAccent.withOpacity(0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          backgroundColor: Colors.pinkAccent,
+          foregroundColor: Colors.white,
+          onPressed: _addExpenditure,
+          icon: const Icon(Icons.add),
+          label: const Text(
+            'NEW CLAIM',
+            style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderSection() {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: Colors.pinkAccent,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            // Date display
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  color: Colors.white.withOpacity(0.9),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _formatDate(selectedDate),
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Summary stats
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildStatItem(
+                  'Total',
+                  _expenditures.length.toString(),
+                  Icons.list_alt,
+                ),
+                _buildStatItem(
+                  'Pending',
+                  _expenditures
+                      .where((e) => e.status.toLowerCase() == 'pending')
+                      .length
+                      .toString(),
+                  Icons.schedule,
+                ),
+                _buildStatItem(
+                  'Approved',
+                  _expenditures
+                      .where((e) => e.status.toLowerCase() == 'approved')
+                      .length
+                      .toString(),
+                  Icons.check_circle,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.9),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExpenditureCard(Expenditure expenditure) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (_) => ExpenditureDetailScreen(expenditure: expenditure),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header row with title and status
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        expenditure.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    _buildStatusChip(expenditure.status),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Amount row
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.request_quote,
+                        color: Colors.orange,
+                        size: 16,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Requested Amount',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          'KES ${expenditure.requestedAmount}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    if (expenditure.approvedAmount.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'Approved',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            'KES ${expenditure.approvedAmount}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Footer row with date and arrow
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      color: Colors.grey[500],
+                      size: 14,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${expenditure.day}, ${expenditure.date}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.grey[400],
+                      size: 14,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String status) {
+    Color color;
+    IconData icon;
+
+    switch (status.toLowerCase()) {
+      case 'approved':
+        color = Colors.green;
+        icon = Icons.check_circle;
+        break;
+      case 'pending':
+        color = Colors.orange;
+        icon = Icons.schedule;
+        break;
+      case 'rejected':
+        color = Colors.red;
+        icon = Icons.cancel;
+        break;
+      case 'processing':
+        color = Colors.blue;
+        icon = Icons.sync;
+        break;
+      default:
+        color = Colors.grey;
+        icon = Icons.info;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 12),
+          const SizedBox(width: 4),
+          Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -113,16 +446,59 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.info, size: 60, color: Colors.black54),
-          SizedBox(height: 10),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: Icon(Icons.receipt_long, size: 60, color: Colors.grey[400]),
+          ),
+          const SizedBox(height: 20),
           Text(
-            'No expenditure available!',
-            style: TextStyle(fontSize: 18),
+            'No Expenditures Found',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap the button below to create your first expense claim',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             textAlign: TextAlign.center,
           ),
         ],
       ),
     );
+  }
+
+  void _showDatePicker() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: Colors.pinkAccent),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+      _loadExpenditures();
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 }

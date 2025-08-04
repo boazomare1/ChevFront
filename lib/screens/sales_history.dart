@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:chevenergies/models/invoice.dart';
 import 'package:chevenergies/services/app_state.dart';
+import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -28,7 +29,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   @override
   void initState() {
     super.initState();
-    _loadInvoices();
+    // Use Future.microtask to avoid setState during build
+    Future.microtask(() => _loadInvoices());
   }
 
   void _loadInvoices() {
@@ -79,117 +81,267 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     Color color;
     switch (status.toLowerCase()) {
       case 'paid':
-        color = Colors.green;
+        color = AppTheme.successColor;
         break;
       case 'unpaid':
-        color = Colors.red;
+        color = AppTheme.errorColor;
         break;
       case 'partly paid':
-        color = Colors.blue;
+        color = AppTheme.infoColor;
         break;
       case 'overdue':
-        color =
-            Colors
-                .deepOrange; // 🔴 You can use Colors.bloodRed if defined or deepOrange
+        color = AppTheme.warningColor;
         break;
       default:
-        color = Colors.grey;
+        color = AppTheme.textSecondary;
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        border: Border.all(color: color),
-        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color, width: 1),
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(status, style: TextStyle(color: color, fontSize: 12)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            status.toLowerCase() == 'paid'
+                ? Icons.check_circle
+                : status.toLowerCase() == 'unpaid'
+                ? Icons.error
+                : status.toLowerCase() == 'partly paid'
+                ? Icons.pending
+                : Icons.warning,
+            color: color,
+            size: 14,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildInvoiceCard(Invoice invoice) {
     final isExpanded = expandedInvoiceIds.contains(invoice.invoiceId);
 
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      elevation: 2,
-      child: InkWell(
-        onTap: () async {
-          if (!isExpanded) {
-            final updated = await Provider.of<AppState>(
-              context,
-              listen: false,
-            ).getInvoiceById(invoice.invoiceId);
-            setState(() {
-              invoice.items.clear();
-              invoice.items.addAll(updated.items);
-              expandedInvoiceIds.add(invoice.invoiceId);
-            });
-          } else {
-            setState(() => expandedInvoiceIds.remove(invoice.invoiceId));
-          }
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    invoice.customer.customerName,
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  _buildStatusBadge(invoice.status),
-                ],
-              ),
-              SizedBox(height: 4),
-              Text('Shop: ${invoice.shop}'),
-              Text('Total: Ksh ${invoice.total.toStringAsFixed(0)}'),
-              Text(
-                'Outstanding: Ksh ${invoice.outstandingBalance.toStringAsFixed(0)}',
-              ),
-              Text('Date: ${invoice.postingDate}'),
-              if (isExpanded) ...[
-                Divider(),
-                Text('Items:', style: TextStyle(fontWeight: FontWeight.bold)),
-                ...invoice.items.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(top: 2.0),
-                    child: Text(
-                      '${item.qty} x ${item.itemName} @ Ksh ${item.rate}',
-                    ),
-                  ),
-                ),
-                SizedBox(height: 10),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: AppTheme.cardDecoration,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () async {
+            if (!isExpanded) {
+              final updated = await Provider.of<AppState>(
+                context,
+                listen: false,
+              ).getInvoiceById(invoice.invoiceId);
+              setState(() {
+                invoice.items.clear();
+                invoice.items.addAll(updated.items);
+                expandedInvoiceIds.add(invoice.invoiceId);
+              });
+            } else {
+              setState(() => expandedInvoiceIds.remove(invoice.invoiceId));
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header row
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    TextButton.icon(
-                      onPressed: () => _previewInvoicePDF(invoice),
-                      icon: Icon(Icons.picture_as_pdf),
-                      label: Text('Preview PDF'),
-                    ),
-                    if (invoice.status == 'Unpaid' ||
-                        invoice.status == 'Partly Paid' ||
-                        invoice.status == 'Overdue')
-                      ElevatedButton.icon(
-                        onPressed: () => _goToPaymentScreen(invoice),
-                        icon: Icon(Icons.payment),
-                        label: Text(
-                          invoice.status == 'Unpaid'
-                              ? 'Pay'
-                              : 'Complete Payment',
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                        ),
+                    // Invoice icon
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      child: Icon(
+                        Icons.receipt,
+                        color: AppTheme.primaryColor,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Customer info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            invoice.customer.customerName,
+                            style: AppTheme.bodyLarge.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            invoice.shop,
+                            style: AppTheme.bodySmall.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Status badge
+                    _buildStatusBadge(invoice.status),
                   ],
                 ),
+
+                const SizedBox(height: 12),
+
+                // Amount and date row
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Total: Ksh ${invoice.total.toStringAsFixed(0)}',
+                            style: AppTheme.bodyMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                          if (invoice.outstandingBalance > 0)
+                            Text(
+                              'Outstanding: Ksh ${invoice.outstandingBalance.toStringAsFixed(0)}',
+                              style: AppTheme.bodySmall.copyWith(
+                                color: AppTheme.errorColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Text(invoice.postingDate, style: AppTheme.caption),
+                  ],
+                ),
+
+                // Expandable items section
+                if (isExpanded) ...[
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+
+                  Text(
+                    'Items',
+                    style: AppTheme.bodyMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  ...invoice.items.map(
+                    (item) => Container(
+                      margin: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.backgroundColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${item.qty}',
+                                style: TextStyle(
+                                  color: AppTheme.primaryColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              item.itemName,
+                              style: AppTheme.bodySmall,
+                            ),
+                          ),
+                          Text(
+                            'Ksh ${item.rate}',
+                            style: AppTheme.bodySmall.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Action buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _previewInvoicePDF(invoice),
+                          icon: const Icon(Icons.picture_as_pdf, size: 18),
+                          label: const Text('Preview PDF'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.primaryColor,
+                            side: BorderSide(color: AppTheme.primaryColor),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      if (invoice.status == 'Unpaid' ||
+                          invoice.status == 'Partly Paid' ||
+                          invoice.status == 'Overdue')
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _goToPaymentScreen(invoice),
+                            icon: const Icon(Icons.payment, size: 18),
+                            label: Text(
+                              invoice.status == 'Unpaid' ? 'Pay' : 'Complete',
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.successColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -379,18 +531,16 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
   Widget _buildShimmerLoader() {
     return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: 5,
       itemBuilder: (_, __) {
         return Shimmer.fromColors(
           baseColor: Colors.grey.shade300,
           highlightColor: Colors.grey.shade100,
-          child: Card(
-            margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Container(
-              height: 100,
-              padding: EdgeInsets.all(16),
-              color: Colors.white,
-            ),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            height: 120,
+            decoration: AppTheme.cardDecoration,
           ),
         );
       },
@@ -400,17 +550,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Sales Invoices'),
-        actions: [
-          IconButton(icon: Icon(Icons.calendar_today), onPressed: _selectDate),
-          IconButton(
-            icon: Icon(Icons.clear),
-            onPressed: _clearFilters,
-            tooltip: 'Clear Filters',
-          ),
-        ],
-      ),
+      backgroundColor: AppTheme.backgroundColor,
       body: Consumer<AppState>(
         builder: (context, appState, _) {
           if (appState.isLoadingInvoices) {
@@ -427,84 +567,228 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                     .contains(searchQuery);
                 final matchesStatus =
                     statusFilter == null || inv.status == statusFilter;
-                print(
-                  'Filtering invoice ${inv.invoiceId}: '
-                  'matchesDate=$matchesDate (postingDate=${inv.postingDate}, selectedDate=${DateFormat('yyyy-MM-dd').format(selectedDate)}), '
-                  'matchesSearch=$matchesSearch, matchesStatus=$matchesStatus',
-                );
                 return matchesDate && matchesSearch && matchesStatus;
               }).toList();
 
-          print('Filtered invoices count: ${filtered.length}');
-
           return Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+              // Header section
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppTheme.primaryColor,
+                      AppTheme.primaryColor.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
                 ),
+                padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
                 child: Column(
                   children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search by customer...',
-                        prefixIcon: Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    // Back button and title row
+                    Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
                         ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'SALES HISTORY',
+                                style: AppTheme.headingLarge.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                ),
+                              ),
+                              Text(
+                                DateFormat(
+                                  'EEEE, MMMM d, yyyy',
+                                ).format(selectedDate),
+                                style: AppTheme.bodyMedium.copyWith(
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Date picker button
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.calendar_today,
+                              color: Colors.white,
+                            ),
+                            onPressed: _selectDate,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Stats row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        AppTheme.statItem(
+                          'Total',
+                          filtered.length.toString(),
+                          Icons.receipt,
+                        ),
+                        AppTheme.statItem(
+                          'Paid',
+                          filtered
+                              .where((inv) => inv.status == 'Paid')
+                              .length
+                              .toString(),
+                          Icons.check_circle,
+                        ),
+                        AppTheme.statItem(
+                          'Pending',
+                          filtered
+                              .where((inv) => inv.status != 'Paid')
+                              .length
+                              .toString(),
+                          Icons.pending,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Search and filter section
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Search field
+                    TextField(
+                      decoration: AppTheme.inputDecoration(
+                        label: 'Search',
+                        hintText: 'Search by customer name...',
+                        prefixIcon: Icons.search,
                       ),
                       onChanged:
                           (val) =>
                               setState(() => searchQuery = val.toLowerCase()),
                     ),
-                    SizedBox(height: 8),
-                    DropdownButton<String>(
-                      value: statusFilter,
-                      hint: Text('Filter by status'),
-                      isExpanded: true,
-                      items:
-                          ['Paid', 'Unpaid', 'Partly Paid', 'Overdue']
-                              .map(
-                                (status) => DropdownMenuItem(
-                                  value: status,
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 10,
-                                        height: 10,
-                                        margin: EdgeInsets.only(right: 8),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color:
-                                              status.toLowerCase() == 'paid'
-                                                  ? Colors.green
-                                                  : status.toLowerCase() ==
-                                                      'unpaid'
-                                                  ? Colors.red
-                                                  : status.toLowerCase() ==
-                                                      'partly paid'
-                                                  ? Colors.blue
-                                                  : Colors.deepOrange,
+                    const SizedBox(height: 12),
+
+                    // Status filter
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.textLight),
+                      ),
+                      child: DropdownButton<String>(
+                        value: statusFilter,
+                        hint: Text(
+                          'Filter by status',
+                          style: AppTheme.bodySmall.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                        isExpanded: true,
+                        underline: const SizedBox(),
+                        items:
+                            ['Paid', 'Unpaid', 'Partly Paid', 'Overdue']
+                                .map(
+                                  (status) => DropdownMenuItem(
+                                    value: status,
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 6,
+                                          height: 6,
+                                          margin: const EdgeInsets.only(
+                                            right: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color:
+                                                status.toLowerCase() == 'paid'
+                                                    ? AppTheme.successColor
+                                                    : status.toLowerCase() ==
+                                                        'unpaid'
+                                                    ? AppTheme.errorColor
+                                                    : status.toLowerCase() ==
+                                                        'partly paid'
+                                                    ? AppTheme.infoColor
+                                                    : AppTheme.warningColor,
+                                          ),
                                         ),
-                                      ),
-                                      Text(status),
-                                    ],
+                                        Expanded(
+                                          child: Text(
+                                            status,
+                                            style: AppTheme.bodySmall,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              )
-                              .toList(),
-                      onChanged: (val) => setState(() => statusFilter = val),
+                                )
+                                .toList(),
+                        onChanged: (val) => setState(() => statusFilter = val),
+                      ),
                     ),
+
+                    // Clear filters button
+                    if (searchQuery.isNotEmpty || statusFilter != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: TextButton.icon(
+                          onPressed: _clearFilters,
+                          icon: const Icon(Icons.clear, size: 16),
+                          label: const Text('Clear Filters'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
+
+              // Invoice list
               Expanded(
                 child:
                     filtered.isEmpty
-                        ? Center(child: Text('No sales for selected criteria.'))
-                        : ListView(
-                          children: filtered.map(_buildInvoiceCard).toList(),
+                        ? AppTheme.emptyState(
+                          icon: Icons.receipt_long,
+                          title: 'No Sales Found',
+                          subtitle: 'No sales match your search criteria',
+                        )
+                        : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filtered.length,
+                          itemBuilder:
+                              (context, index) =>
+                                  _buildInvoiceCard(filtered[index]),
                         ),
               ),
             ],

@@ -1,9 +1,10 @@
 import 'package:chevenergies/models/item.dart';
 import 'package:chevenergies/services/app_state.dart';
+import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:excel/excel.dart';
+import 'package:excel/excel.dart' as excel;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -20,7 +21,10 @@ class StockScreen extends StatefulWidget {
 
 class _StockScreenState extends State<StockScreen> {
   late Future<List<Item>> _itemsFuture;
-  final currencyFormatter = NumberFormat.currency(locale: 'en_KE', symbol: 'KSh ');
+  final currencyFormatter = NumberFormat.currency(
+    locale: 'en_KE',
+    symbol: 'KSh ',
+  );
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   int? _sortColumnIndex;
@@ -39,8 +43,10 @@ class _StockScreenState extends State<StockScreen> {
 
   void _refreshItems() {
     setState(() {
-      _itemsFuture =
-          Provider.of<AppState>(context, listen: false).listItems(widget.routeId);
+      _itemsFuture = Provider.of<AppState>(
+        context,
+        listen: false,
+      ).listItems(widget.routeId);
     });
   }
 
@@ -51,11 +57,12 @@ class _StockScreenState extends State<StockScreen> {
   }
 
   List<Item> _filterAndSortItems(List<Item> items) {
-    var filteredItems = items.where((item) {
-      final name = item.itemName?.toLowerCase() ?? '';
-      final code = item.itemCode?.toLowerCase() ?? '';
-      return name.contains(_searchQuery) || code.contains(_searchQuery);
-    }).toList();
+    var filteredItems =
+        items.where((item) {
+          final name = item.itemName?.toLowerCase() ?? '';
+          final code = item.itemCode?.toLowerCase() ?? '';
+          return name.contains(_searchQuery) || code.contains(_searchQuery);
+        }).toList();
 
     if (_sortColumnIndex != null) {
       filteredItems.sort((a, b) {
@@ -91,295 +98,304 @@ class _StockScreenState extends State<StockScreen> {
       return;
     }
 
-    var excel = Excel.createExcel();
-    var sheet = excel['Stock'];
+    var excelDoc = excel.Excel.createExcel();
+    var sheet = excelDoc['Stock'];
 
     sheet.appendRow([
-      TextCellValue('No'),
-      TextCellValue('Name'),
-      TextCellValue('Code'),
-      TextCellValue('Quantity'),
-      TextCellValue('Price'),
+      excel.TextCellValue('No'),
+      excel.TextCellValue('Name'),
+      excel.TextCellValue('Code'),
+      excel.TextCellValue('Quantity'),
+      excel.TextCellValue('Price'),
     ]);
 
-    for (var i = 0; i < items.length; i++) {
-      var item = items[i];
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
       sheet.appendRow([
-        TextCellValue((i + 1).toString()),
-        TextCellValue(item.itemName ?? ''),
-        TextCellValue(item.itemCode ?? ''),
-        TextCellValue(item.quantity?.toStringAsFixed(2) ?? '0.00'),
-        TextCellValue(currencyFormatter.format(item.sellingPrice)),
+        excel.TextCellValue((i + 1).toString()),
+        excel.TextCellValue(item.itemName ?? ''),
+        excel.TextCellValue(item.itemCode ?? ''),
+        excel.TextCellValue((item.quantity ?? 0).toString()),
+        excel.TextCellValue(currencyFormatter.format(item.sellingPrice ?? 0)),
       ]);
     }
 
-    final directory = await getTemporaryDirectory();
-    final fileName = 'Warehouse_Stock_${DateTime.now().toIso8601String()}.xlsx';
-    final filePath = '${directory.path}/$fileName';
-    final file = File(filePath);
-    await file.writeAsBytes(excel.encode()!);
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/stock_${widget.routeId}.xlsx');
+    await file.writeAsBytes(excelDoc.encode()!);
 
-    await Share.shareXFiles([XFile(filePath)], text: 'Warehouse Stock Export');
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Excel file exported and ready to share')),
-    );
+    await Share.shareXFiles([
+      XFile(file.path),
+    ], text: 'Stock Report for Route ${widget.routeId}');
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    const padding = 16.0 * 2;
-    final availableWidth = screenWidth - padding;
-    const columnWidths = {
-      0: 0.10, // No: 10%
-      1: 0.30, // Name: 30%
-      2: 0.25, // Code: 25%
-      3: 0.15, // Qty: 15%
-      4: 0.20, // Price: 20%
-    };
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Warehouse Stock'),
-        backgroundColor: Colors.green[700],
-        elevation: 0,
+      backgroundColor: AppTheme.backgroundColor,
+      appBar: AppTheme.appBarStyle(
+        title: 'STOCK INVENTORY',
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: _refreshItems,
-          ),
-          IconButton(
-            icon: const Icon(Icons.download),
-            tooltip: 'Export to Excel',
+            icon: const Icon(Icons.file_download),
             onPressed: () async {
-              final snapshot = await _itemsFuture;
-              await _exportToExcel(_filterAndSortItems(snapshot ?? []));
+              final items = await _itemsFuture;
+              await _exportToExcel(items);
             },
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search by name or code...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.0),
+      body: FutureBuilder<List<Item>>(
+        future: _itemsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppTheme.primaryColor,
                 ),
-                filled: true,
-                fillColor: Colors.grey[100],
+              ),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return AppTheme.emptyState(
+              icon: Icons.error_outline,
+              title: 'Error Loading Stock',
+              subtitle: 'Failed to load stock data: ${snapshot.error}',
+            );
+          }
+
+          final items = snapshot.data ?? [];
+          final filteredItems = _filterAndSortItems(items);
+
+          if (items.isEmpty) {
+            return AppTheme.emptyState(
+              icon: Icons.inventory_2,
+              title: 'No Stock Available',
+              subtitle: 'No items found for this route',
+            );
+          }
+
+          return Column(
+            children: [
+              // Header section with stats
+              AppTheme.headerSection(
+                title: 'ROUTE ${widget.routeId}',
+                subtitle: '${items.length} items in stock',
+                stats: [
+                  AppTheme.statItem(
+                    'Total Items',
+                    items.length.toString(),
+                    Icons.inventory,
+                  ),
+                  AppTheme.statItem(
+                    'Available',
+                    items
+                        .where((item) => (item.quantity ?? 0) > 0)
+                        .length
+                        .toString(),
+                    Icons.check_circle,
+                  ),
+                  AppTheme.statItem(
+                    'Out of Stock',
+                    items
+                        .where((item) => (item.quantity ?? 0) <= 0)
+                        .length
+                        .toString(),
+                    Icons.warning,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  decoration: AppTheme.cardDecoration,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Search items...',
+                      border: InputBorder.none,
+                      icon: Icon(Icons.search),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Stock list
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: filteredItems.length,
+                  itemBuilder: (context, index) {
+                    final item = filteredItems[index];
+                    return _buildStockCard(item, index + 1);
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStockCard(Item item, int index) {
+    final quantity = item.quantity ?? 0;
+    final isOutOfStock = quantity <= 0;
+    final isLowStock = quantity <= 10 && quantity > 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: AppTheme.cardDecoration,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Item number
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color:
+                    isOutOfStock
+                        ? AppTheme.errorColor.withOpacity(0.1)
+                        : isLowStock
+                        ? AppTheme.warningColor.withOpacity(0.1)
+                        : AppTheme.successColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(
+                child: Text(
+                  index.toString(),
+                  style: TextStyle(
+                    color:
+                        isOutOfStock
+                            ? AppTheme.errorColor
+                            : isLowStock
+                            ? AppTheme.warningColor
+                            : AppTheme.successColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 16.0),
+
+            const SizedBox(width: 16),
+
+            // Item details
             Expanded(
-              child: FutureBuilder<List<Item>>(
-                future: _itemsFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.itemName ?? 'Unknown Item',
+                    style: AppTheme.bodyLarge,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Code: ${item.itemCode ?? 'N/A'}',
+                    style: AppTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text(
+                        'Qty: ${quantity}',
+                        style: AppTheme.bodyMedium.copyWith(
+                          color:
+                              isOutOfStock
+                                  ? AppTheme.errorColor
+                                  : isLowStock
+                                  ? AppTheme.warningColor
+                                  : AppTheme.successColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Error: ${snapshot.error}',
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                          const SizedBox(height: 8),
-                          ElevatedButton(
-                            onPressed: _refreshItems,
-                            child: const Text('Retry'),
-                          ),
-                        ],
+                      const SizedBox(width: 16),
+                      Text(
+                        currencyFormatter.format(item.sellingPrice ?? 0),
+                        style: AppTheme.bodyMedium,
                       ),
-                    );
-                  }
+                    ],
+                  ),
+                ],
+              ),
+            ),
 
-                  final items = _filterAndSortItems(snapshot.data ?? []);
-
-                  if (items.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'No items available.',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    );
-                  }
-
-                  return ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: availableWidth),
-                    child: DataTable(
-                      columnSpacing: 4.0,
-                      dataRowHeight: 44.0,
-                      headingRowHeight: 52.0,
-                      sortColumnIndex: _sortColumnIndex,
-                      sortAscending: _sortAscending,
-                      columns: [
-                        DataColumn(
-                          label: SizedBox(
-                            width: availableWidth * columnWidths[0]!,
-                            child: const Text(
-                              'No',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                        DataColumn(
-                          label: SizedBox(
-                            width: availableWidth * columnWidths[1]!,
-                            child: const Text(
-                              'Name',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          onSort: (columnIndex, ascending) {
-                            setState(() {
-                              _sortColumnIndex = columnIndex;
-                              _sortAscending = ascending;
-                            });
-                          },
-                        ),
-                        DataColumn(
-                          label: SizedBox(
-                            width: availableWidth * columnWidths[2]!,
-                            child: const Text(
-                              'Code',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          onSort: (columnIndex, ascending) {
-                            setState(() {
-                              _sortColumnIndex = columnIndex;
-                              _sortAscending = ascending;
-                            });
-                          },
-                        ),
-                        DataColumn(
-                          label: SizedBox(
-                            width: availableWidth * columnWidths[3]!,
-                            child: const Text(
-                              'Qty',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          onSort: (columnIndex, ascending) {
-                            setState(() {
-                              _sortColumnIndex = columnIndex;
-                              _sortAscending = ascending;
-                            });
-                          },
-                        ),
-                        DataColumn(
-                          label: SizedBox(
-                            width: availableWidth * columnWidths[4]!,
-                            child: const Text(
-                              'Price',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          onSort: (columnIndex, ascending) {
-                            setState(() {
-                              _sortColumnIndex = columnIndex;
-                              _sortAscending = ascending;
-                            });
-                          },
-                        ),
-                      ],
-                      rows: List.generate(items.length, (index) {
-                        final item = items[index];
-                        return DataRow(
-                          cells: [
-                            DataCell(
-                              SizedBox(
-                                width: availableWidth * columnWidths[0]!,
-                                child: Text(
-                                  '${index + 1}',
-                                  style: const TextStyle(fontSize: 11),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              SizedBox(
-                                width: availableWidth * columnWidths[1]!,
-                                child: Text(
-                                  item.itemName ?? '',
-                                  style: const TextStyle(fontSize: 11),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              SizedBox(
-                                width: availableWidth * columnWidths[2]!,
-                                child: Text(
-                                  item.itemCode ?? '',
-                                  style: const TextStyle(fontSize: 11),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              SizedBox(
-                                width: availableWidth * columnWidths[3]!,
-                                child: Text(
-                                  item.quantity!.toStringAsFixed(2),
-                                  style: const TextStyle(fontSize: 11),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              SizedBox(
-                                width: availableWidth * columnWidths[4]!,
-                                child: Text(
-                                  currencyFormatter.format(item.sellingPrice),
-                                  style: const TextStyle(fontSize: 11),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      }),
+            // Status indicator
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color:
+                    isOutOfStock
+                        ? AppTheme.errorColor.withOpacity(0.1)
+                        : isLowStock
+                        ? AppTheme.warningColor.withOpacity(0.1)
+                        : AppTheme.successColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color:
+                      isOutOfStock
+                          ? AppTheme.errorColor
+                          : isLowStock
+                          ? AppTheme.warningColor
+                          : AppTheme.successColor,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isOutOfStock
+                        ? Icons.cancel
+                        : isLowStock
+                        ? Icons.warning
+                        : Icons.check_circle,
+                    color:
+                        isOutOfStock
+                            ? AppTheme.errorColor
+                            : isLowStock
+                            ? AppTheme.warningColor
+                            : AppTheme.successColor,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    isOutOfStock
+                        ? 'OUT'
+                        : isLowStock
+                        ? 'LOW'
+                        : 'OK',
+                    style: TextStyle(
+                      color:
+                          isOutOfStock
+                              ? AppTheme.errorColor
+                              : isLowStock
+                              ? AppTheme.warningColor
+                              : AppTheme.successColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Add new item feature coming soon!')),
-          );
-        },
-        backgroundColor: Colors.pinkAccent,
-        child: const Icon(Icons.add),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

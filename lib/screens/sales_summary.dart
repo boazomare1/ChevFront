@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:chevenergies/shared utils/app_theme.dart';
 
 class SalesSummaryScreen extends StatefulWidget {
   const SalesSummaryScreen({super.key});
@@ -35,117 +36,279 @@ class _SalesSummaryScreenState extends State<SalesSummaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF228B22),
-        elevation: 0,
-        leading: IconButton(
-          padding: const EdgeInsets.all(10),
-          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'SUMMARY',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 0.2,
-            shadows: [
-              Shadow(
-                color: Colors.black26,
-                offset: Offset(0, 6),
-                blurRadius: 4,
-              ),
-            ],
-          ),
-        ),
-        centerTitle: true,
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(20),
-          child: Padding(
-            padding: EdgeInsets.only(bottom: 10),
-            child: SizedBox(
-              width: 70,
-              height: 1,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: Colors.white),
-              ),
-            ),
-          ),
-        ),
-      ),
+      backgroundColor: AppTheme.backgroundColor,
       body: Column(
         children: [
-          Card(
-            margin: const EdgeInsets.all(12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+          // Header section
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryColor,
+                  AppTheme.primaryColor.withOpacity(0.8),
+                ],
+              ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
             ),
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('SUMMARY - KDC 378L',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.pink)),
-                  const SizedBox(height: 12),
-                  Row(
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+            child: Column(
+              children: [
+                // Back button and title row
+                Row(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SUMMARY',
+                            style: AppTheme.headingLarge.copyWith(
+                              color: Colors.white,
+                              fontSize: 20,
+                            ),
+                          ),
+                          Text(
+                            'KDC 378L - Sales Summary',
+                            style: AppTheme.bodyMedium.copyWith(
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Content section
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Start Date'),
-                            InkWell(
-                              onTap: () => _pickDate(isStart: true),
-                              child: InputDecorator(
-                                decoration: const InputDecoration(
-                                  border: UnderlineInputBorder(),
+                      // Header with icon
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.summarize,
+                              color: AppTheme.primaryColor,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'SUMMARY - KDC 378L',
+                            style: AppTheme.headingMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Date picker section
+                      Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Start Date',
+                                      style: AppTheme.bodyMedium.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    InkWell(
+                                      onTap: () => _pickDate(isStart: true),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 10,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.backgroundColor,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          border: Border.all(
+                                            color: AppTheme.textLight
+                                                .withOpacity(0.3),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.calendar_today,
+                                              size: 14,
+                                              color: AppTheme.primaryColor,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                formatDate(startDate),
+                                                style: AppTheme.bodySmall,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                child: Text(formatDate(startDate)),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'End Date',
+                                      style: AppTheme.bodyMedium.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    InkWell(
+                                      onTap: () => _pickDate(isStart: false),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 10,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.backgroundColor,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          border: Border.all(
+                                            color: AppTheme.textLight
+                                                .withOpacity(0.3),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.calendar_today,
+                                              size: 14,
+                                              color: AppTheme.primaryColor,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                formatDate(endDate),
+                                                style: AppTheme.bodySmall,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {},
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'SUBMIT',
+                                style: TextStyle(fontWeight: FontWeight.w600),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
+                      const SizedBox(height: 16),
+
+                      // Summary rows
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.backgroundColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.textLight.withOpacity(0.3),
+                          ),
+                        ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('End Date'),
-                            InkWell(
-                              onTap: () => _pickDate(isStart: false),
-                              child: InputDecorator(
-                                decoration: const InputDecoration(
-                                  border: UnderlineInputBorder(),
-                                ),
-                                child: Text(formatDate(endDate)),
-                              ),
+                            _buildSummaryRow(
+                              'Outlets Visited / Beat-Plan',
+                              '0 / 10',
                             ),
+                            _buildSummaryRow(
+                              'Active Sale / Ticketing',
+                              '0 / 10',
+                            ),
+                            _buildSummaryRow('Productivity', '0'),
+                            _buildSummaryRow('Total Discount Allowed', '0'),
+                            _buildSummaryRow('New Customer Created', '0'),
+                            _buildSummaryRow('Perfect Store', 'null'),
                           ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.pink,
-                        ),
-                        child: const Text('SUBMIT'),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  _buildSummaryRow('Outlets Visited / Beat-Plan', '0 / 10'),
-                  _buildSummaryRow('Active Sale / Ticketing', '0 / 10'),
-                  _buildSummaryRow('Productivity', '0'),
-                  _buildSummaryRow('Total Discount Allowed', '0'),
-                  _buildSummaryRow('New Customer Created', '0'),
-                  _buildSummaryRow('Perfect Store', 'null'),
-                ],
+                ),
               ),
             ),
           ),
@@ -155,12 +318,28 @@ class _SalesSummaryScreenState extends State<SalesSummaryScreen> {
   }
 
   Widget _buildSummaryRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: AppTheme.textLight.withOpacity(0.1)),
+        ),
+      ),
       child: Row(
         children: [
-          Expanded(child: Text(label)),
-          Text(':  $value'),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTheme.bodyMedium.copyWith(fontWeight: FontWeight.w500),
+            ),
+          ),
+          Text(
+            ':  $value',
+            style: AppTheme.bodyMedium.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primaryColor,
+            ),
+          ),
         ],
       ),
     );

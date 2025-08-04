@@ -1,4 +1,5 @@
 import 'package:chevenergies/shared%20utils/widgets.dart';
+import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
@@ -51,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
       builder:
           (_) => const Center(
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
             ),
           ),
     );
@@ -82,112 +83,124 @@ class _LoginScreenState extends State<LoginScreen> {
         _fieldError == 'password' ? 'Password cannot be empty' : null;
 
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       body: SingleChildScrollView(
-        child: Container(
-          color: Colors.white,
-          child: Column(
-            children: [
-              Container(color: const Color(0xFF228B22), height: 20),
-              const SizedBox(height: 150),
-              Center(
-                child: Card(
-                  elevation: 8,
-                  margin: const EdgeInsets.all(20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          'Welcome Back',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF228B22),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Image.asset(
-                          'assets/logo.png',
-                          height: 80,
-                          errorBuilder:
-                              (_, __, ___) =>
-                                  const Icon(Icons.error, color: Colors.red),
-                        ),
-                        const SizedBox(height: 20),
-                        // Email field with inline error
-                        TextField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            errorText: emailErrorText,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // Password
-                        StyledTextField(
-                          label: 'Password',
-                          controller: _passwordController,
-                          obscureText: true,
-                          keyboardType: TextInputType.visiblePassword,
-                        ),
-                        if (passErrorText != null) ...[
-                          const SizedBox(height: 5),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              passErrorText,
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromARGB(
-                                255,
-                                2,
-                                97,
-                                49,
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: const Text(
-                              'Login',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.greenAccent,
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (_error != null) ...[
-                          const SizedBox(height: 10),
-                          Text(
-                            _error!,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+        child: Column(
+          children: [
+            // Header section
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: AppTheme.primaryColor,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
                 ),
               ),
-            ],
-          ),
+              child: Padding(
+                padding: const EdgeInsets.all(40),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 60),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.gas_meter,
+                        color: Colors.white,
+                        size: 60,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'POWER GAS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Welcome back!',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            // Login form
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: Container(
+                decoration: AppTheme.cardDecoration,
+                padding: const EdgeInsets.all(30),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('LOGIN', style: AppTheme.headingMedium),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Enter your credentials to continue',
+                      style: AppTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Email field
+                    StyledTextField(
+                      controller: _emailController,
+                      label: 'Email Address',
+                      keyboardType: TextInputType.emailAddress,
+                      prefixIcon: const Icon(Icons.email),
+                      validator: (value) => emailErrorText,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Password field
+                    StyledTextField(
+                      controller: _passwordController,
+                      label: 'Password',
+                      obscureText: true,
+                      prefixIcon: const Icon(Icons.lock),
+                      validator: (value) => passErrorText,
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Login button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _login,
+                        style: AppTheme.primaryButtonStyle,
+                        child: const Text(
+                          'SIGN IN',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );

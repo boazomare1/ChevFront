@@ -155,14 +155,13 @@ class AppState with ChangeNotifier {
   }
     Future<Map<String, dynamic>> raiseExpenseRequest({
     required String date,
-    required String routeId,
     required double requestedAmount,
     required String description,
     String? receiptBase64,
   }) {
     return apiService.raiseExpenseRequest(
       date: date,
-      routeId: routeId,
+      routeId: user!.routes.first.routeId,
       amount: requestedAmount,
       description: description,
       receiptImage: receiptBase64,
