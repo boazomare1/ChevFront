@@ -1,3 +1,6 @@
+import 'package:chevenergies/models/user.dart';
+import 'package:chevenergies/screens/expenditure.dart';
+import 'package:chevenergies/screens/profile.dart';
 import 'package:chevenergies/screens/sales.dart';
 import 'package:chevenergies/screens/sales_dash.dart';
 import 'package:chevenergies/screens/sales_history.dart';
@@ -9,12 +12,69 @@ import '../services/app_state.dart';
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
-
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  Widget _buildDrawer(User user) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          UserAccountsDrawerHeader(
+            decoration: const BoxDecoration(color: Color(0xFF228B22)),
+            accountName: Text(
+              user.name.toUpperCase(),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            accountEmail: Text(user.email),
+            currentAccountPicture: const CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, size: 40, color: Colors.green),
+            ),
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.account_circle),
+            title: const Text('Profile'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.lock_reset),
+            title: const Text('Change Password'),
+            onTap: () {
+              Navigator.pop(context);
+              SnackBar snackBar = const SnackBar(
+                content: Text('Coming soon...'),
+                duration: Duration(seconds: 2),
+              );
+            },
+          ),
+
+          const Divider(),
+
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('LOGOUT', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              Navigator.pop(context);
+              Provider.of<AppState>(context, listen: false).logout();
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   String? _error;
 
   @override
@@ -22,61 +82,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final user = Provider.of<AppState>(context).user!;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green,
+        title: const Text(
+          'POWER GAS HOME',
+          style: TextStyle(color: Colors.white),
+        ),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+
+      drawer: _buildDrawer(user),
       body: SingleChildScrollView(
         child: Container(
           color: Colors.white,
           child: Column(
-            children: [
-              // Green top stripe
-              Container(
-                height: 60,
-                color: const Color(0xFF228B22),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Title card
-              Card(
-                elevation: 3,
-                margin: const EdgeInsets.symmetric(horizontal: 25, vertical: 5),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6)),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 15, horizontal: 20),
-                  child: Column(
-                    children: const [
-                      Text(
-                        'POWER GAS HOME',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.2,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black26,
-                              offset: Offset(0, 6),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Divider(
-                        color: Colors.black,
-                        indent: 30,
-                        endIndent: 30,
-                        thickness: 1,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
+            children: [ 
               const SizedBox(height: 20),
-
-              // Grid of feature cards
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Wrap(
@@ -134,9 +156,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => StockScreen(
-              routeId: user.routes.first.routeId,
-            )),
+            MaterialPageRoute(
+              builder: (_) => StockScreen(routeId: user.routes.first.routeId),
+            ),
           );
         },
       ),
@@ -165,14 +187,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         label: 'Expenditure',
         iconPath: 'assets/financial.png',
         onTap: () {
-          // TODO: push Expenditure
-        },
-      ),
-      _Feature(
-        label: 'Account',
-        iconPath: 'assets/user.png',
-        onTap: () {
-          // TODO: push Account
+         Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ExpenditureScreen()),
+          );
         },
       ),
       // Blank placeholder -> keeps wrap even
@@ -191,8 +209,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         height: 150,
         child: Card(
           elevation: 3,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: InkWell(
             borderRadius: BorderRadius.circular(6),
             onTap: feature.onTap,
@@ -203,8 +220,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   feature.iconPath,
                   width: 50,
                   height: 50,
-                  errorBuilder: (ctx, e, st) =>
-                      const Icon(Icons.image_not_supported),
+                  errorBuilder:
+                      (ctx, e, st) => const Icon(Icons.image_not_supported),
                 ),
                 const SizedBox(height: 10),
                 Text(

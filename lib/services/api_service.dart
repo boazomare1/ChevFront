@@ -19,28 +19,13 @@ class ApiService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
     );
+    print("From Login {${response.body}}");
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final token = data['access_token'];
-      final userData = data['user'];
-      final routes =
-          (userData['route'] as List)
-              .map(
-                (r) => RouteData(
-                  routeId: r['route_id'],
-                  vehicle: r['vehicle'],
-                  warehouse: r['warehouse'],
-                  warehouseName: r['warehouse_name'],
-                  stops: [],
-                ),
-              )
-              .toList();
-      return User(
-        token: token,
-        email: email,
-        name: userData['name'],
-        routes: routes,
-      );
+      final userJson = data['user'];
+
+      return User.fromJson(userJson, token);
     } else {
       throw Exception('Login failed: ${response.body}');
     }
@@ -140,7 +125,7 @@ class ApiService {
     if (response.statusCode != 200) {
       throw Exception('Failed to fetch routes: ${response.body}');
     }
- print ("From Get Routes {${response.body}}");
+    print("From Get Routes {${response.body}}");
     // 1) Decode the JSON payload
     final Map<String, dynamic> body = jsonDecode(response.body);
 

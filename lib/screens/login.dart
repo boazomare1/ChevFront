@@ -15,7 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   String? _fieldError; // either 'email' or 'password'
-  String? _error;      // general ошибки
+  String? _error; // general ошибки
 
   @override
   void dispose() {
@@ -48,24 +48,28 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-        ),
-      ),
+      builder:
+          (_) => const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+            ),
+          ),
     );
 
     try {
-      await Provider.of<AppState>(context, listen: false)
-          .login(email, pass);
-      Navigator.pop(context); // close loader
+      await Provider.of<AppState>(context, listen: false).login(email, pass);
+      Navigator.pop(context); // close loading dialog
+      // ✅ Navigate to dashboard
+      Navigator.pushReplacementNamed(context, '/');
+      // close loader
     } catch (e) {
       Navigator.pop(context); // close loader
       showDialog(
         context: context,
-        builder: (_) => const ErrorDialog(
-          message: 'Authentication Failed - check your credentials',
-        ),
+        builder:
+            (_) => const ErrorDialog(
+              message: 'Authentication Failed - check your credentials',
+            ),
       );
     }
   }
@@ -90,7 +94,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   elevation: 8,
                   margin: const EdgeInsets.all(20),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Column(
@@ -108,8 +113,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         Image.asset(
                           'assets/logo.png',
                           height: 80,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.error, color: Colors.red),
+                          errorBuilder:
+                              (_, __, ___) =>
+                                  const Icon(Icons.error, color: Colors.red),
                         ),
                         const SizedBox(height: 20),
                         // Email field with inline error
@@ -148,10 +154,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: ElevatedButton(
                             onPressed: _login,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  const Color.fromARGB(255, 2, 97, 49),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 12),
+                              backgroundColor: const Color.fromARGB(
+                                255,
+                                2,
+                                97,
+                                49,
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),

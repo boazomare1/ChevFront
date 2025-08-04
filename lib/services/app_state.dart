@@ -22,6 +22,13 @@ class AppState with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> logout() async {
+  user = null;
+  apiService.token = null;
+  notifyListeners();
+}
+
+
   Future<List<RouteData>> getRoutes(String day) async {
     if (user == null || user!.routes.isEmpty) {
       return [];
@@ -77,7 +84,9 @@ class AppState with ChangeNotifier {
     final endStr = fmt.format(endDate);
 
     try {
-      print('Fetching invoices for routeId: $routeId, startDate: $startStr, endDate: $endStr');
+      print(
+        'Fetching invoices for routeId: $routeId, startDate: $startStr, endDate: $endStr',
+      );
       final invoices = await apiService.listInvoices(
         routeId: routeId,
         startDate: startStr,
