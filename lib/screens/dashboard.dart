@@ -1,5 +1,6 @@
 import 'package:chevenergies/models/user.dart';
 import 'package:chevenergies/screens/expenditure.dart';
+import 'package:chevenergies/screens/generic_invoice_list_screen.dart';
 import 'package:chevenergies/screens/profile.dart';
 import 'package:chevenergies/screens/sales.dart';
 import 'package:chevenergies/screens/sales_dash.dart';
@@ -75,8 +76,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  String? _error;
-
   @override
   Widget build(BuildContext context) {
     final user = Provider.of<AppState>(context).user!;
@@ -97,7 +96,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Container(
           color: Colors.white,
           child: Column(
-            children: [ 
+            children: [
               const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -166,28 +165,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
         label: 'Discount Sales',
         iconPath: 'assets/offer.png',
         onTap: () {
-          // TODO: push Discount Sales
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => GenericInvoiceListScreen(
+                    title: 'Discount Sales',
+                    filterFn:
+                        (inv) => inv.items.any((item) => item.discount > 0),
+                  ),
+            ),
+          );
         },
       ),
       _Feature(
         label: 'Invoice Sales',
         iconPath: 'assets/bill.png',
         onTap: () {
-          // TODO: push Invoice Sales
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => GenericInvoiceListScreen(title: 'All Sales'),
+            ),
+          );
         },
       ),
       _Feature(
         label: 'Cheque Sales',
         iconPath: 'assets/cheque.png',
         onTap: () {
-          // TODO: push Cheque Sales
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => GenericInvoiceListScreen(
+                    title: 'Cheque Sales',
+                    filterFn:
+                        (inv) =>
+                            inv.selectedPaymentMethod?.toLowerCase() ==
+                            'cheque',
+                  ),
+            ),
+          );
         },
       ),
+
       _Feature(
         label: 'Expenditure',
         iconPath: 'assets/financial.png',
         onTap: () {
-         Navigator.push(
+          Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const ExpenditureScreen()),
           );

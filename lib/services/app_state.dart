@@ -117,12 +117,16 @@ class AppState with ChangeNotifier {
   Future<Map<String, dynamic>> createCustomer({
     required String name,
     required String type,
+    required String phoneNumber,
+    required List<String> paymentMethods,
     required String territory,
   }) {
     return apiService.createCustomer(
       customerName: name,
       customerType: type,
       territory: territory,
+      phoneNumber: phoneNumber,
+      paymentMethods: paymentMethods,
     );
   }
 
@@ -149,4 +153,44 @@ class AppState with ChangeNotifier {
       logoBase64: logoBase64,
     );
   }
+    Future<Map<String, dynamic>> raiseExpenseRequest({
+    required String date,
+    required String routeId,
+    required double requestedAmount,
+    required String description,
+    String? receiptBase64,
+  }) {
+    return apiService.raiseExpenseRequest(
+      date: date,
+      routeId: routeId,
+      amount: requestedAmount,
+      description: description,
+      receiptImage: receiptBase64,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> listExpenseRequests({
+    required String routeId,
+    required String startDate,
+    required String endDate,
+  }) {
+    return apiService.listExpenseRequests(
+      routeId: routeId,
+      startDate: startDate,
+      endDate: endDate,
+    );
+  }
+
+  Future<List<Invoice>> listAllSales({
+    required String routeId,
+    required String startDate,
+    required String endDate,
+  }) {
+    return apiService.listAllSales(
+      routeId: routeId,
+      startDate: startDate,
+      endDate: endDate,
+    );
+  }
+
 }

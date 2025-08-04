@@ -69,6 +69,8 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       final response = await appState.createCustomer(
         name: customerNameController.text,
         type: customerType,
+        phoneNumber: phoneNumberController.text,
+        paymentMethods: selectedPaymentMethods,
         territory: selectedTerritory!,
       );
       final customerId = response['customer_id'] as String;

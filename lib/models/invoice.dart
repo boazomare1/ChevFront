@@ -4,6 +4,7 @@ class Customer {
   final String? customerType;
   final String? customerGroup;
   final String? territory;
+  final List<String>? paymentMethods;
 
   Customer({
     required this.customerId,
@@ -11,6 +12,7 @@ class Customer {
     this.customerType,
     this.customerGroup,
     this.territory,
+    this.paymentMethods,
   });
 
   factory Customer.fromJson(dynamic json) {
@@ -26,6 +28,9 @@ class Customer {
       customerType: json['customer_type'],
       customerGroup: json['customer_group'],
       territory: json['territory'],
+      paymentMethods: (json['payment_methods'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
     );
   }
 }
@@ -42,6 +47,7 @@ class Invoice {
   final String paymentStatus;
   final String postingDate;
   final List<InvoiceItem> items;
+  String? selectedPaymentMethod;
 
   Invoice({
     required this.invoiceId,
@@ -55,6 +61,7 @@ class Invoice {
     required this.paymentStatus,
     required this.postingDate,
     required this.items,
+    this.selectedPaymentMethod,
   });
 
   factory Invoice.fromJson(Map<String, dynamic> json) {
@@ -73,6 +80,7 @@ class Invoice {
       paymentStatus: json['payment_status']?? 'Unknown',
       postingDate: json['posting_date'],
       items: (json['items'] as List<dynamic>?)?.map((item) => InvoiceItem.fromJson(item)).toList() ?? [],
+      selectedPaymentMethod: json['selected_payment_method']??'',
     );
   }
 }
@@ -84,6 +92,7 @@ class InvoiceItem {
   final double rate;
   final double amount;
   final String uom;
+  double discount = 0;
 
   InvoiceItem({
     required this.itemCode,
@@ -92,6 +101,7 @@ class InvoiceItem {
     required this.rate,
     required this.amount,
     required this.uom,
+    this.discount = 0,
   });
 
   factory InvoiceItem.fromJson(Map<String, dynamic> json) {
@@ -102,6 +112,7 @@ class InvoiceItem {
       rate: (json['rate'] ?? 0).toDouble(),
       amount: (json['amount'] ?? 0).toDouble(),
       uom: json['uom'] ?? 'pcs',
+      discount: (json['discount'] ?? 0).toDouble(),
     );
   }
 }

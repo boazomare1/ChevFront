@@ -12,35 +12,7 @@ class ExpenditureScreen extends StatefulWidget {
 }
 
 class _ExpenditureScreenState extends State<ExpenditureScreen> {
-  final List<Expenditure> _expenditures = [
-    Expenditure(
-      day: 'Monday',
-      date: '2025-08-01',
-      name: 'Samson Safari',
-      requestedAmount: 'KES 5,000',
-      approvedAmount: 'KES 4,000',
-      comments: 'Fuel and meals',
-      status: 'APPROVED',
-    ),
-    Expenditure(
-      day: 'Tuesday',
-      date: '2025-08-02',
-      name: 'Mercy Mutua',
-      requestedAmount: 'KES 3,500',
-      approvedAmount: 'KES 3,500',
-      comments: 'Transport refund',
-      status: 'APPROVED',
-    ),
-    Expenditure(
-      day: 'Wednesday',
-      date: '2025-08-03',
-      name: 'James Mwangi',
-      requestedAmount: 'KES 2,000',
-      approvedAmount: 'KES 0',
-      comments: 'Unclear receipt',
-      status: 'REJECTED',
-    ),
-  ];
+  final List<Expenditure> _expenditures = [];
 
   bool _loading = false;
 

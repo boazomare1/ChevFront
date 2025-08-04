@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:chevenergies/models/invoice.dart';
 import 'package:chevenergies/models/item.dart' show Item;
@@ -293,6 +294,8 @@ class ApiService {
     required String customerName,
     required String customerType,
     required String territory,
+    required String phoneNumber,
+    required List<String> paymentMethods,
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/route_plan.apis.manage.create_customer'),
@@ -304,9 +307,11 @@ class ApiService {
         'customer_name': customerName,
         'customer_type': customerType,
         'territory': territory,
+        'phone': phoneNumber,
+        'payment_methods': paymentMethods,
       }),
     );
-
+   print("From Create Customer {${response.body}}");
     if (response.statusCode == 201) {
       return jsonDecode(response.body)['data'];
     } else {
@@ -346,6 +351,113 @@ class ApiService {
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception('Failed to create shop: ${response.body}');
+    }
+  }
+  Future<Map<String, dynamic>> raiseExpenseRequest({
+    required String routeId,
+    required double amount,
+    required String description,
+    required String date,
+    String? receiptImage,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/route_plan.apis.expense.raise_expense_request'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'route_id': routeId,
+        'amount': amount.toString(),
+        'description': description,
+        'date': date,
+        'receipt_image': receiptImage != null ? base64Encode(File(receiptImage).readAsBytesSync()) : null,
+      }),
+    );
+
+    print("From Raise Expense Request {${response.body}}");
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else {
+      throw Exception('Failed to raise expense request: ${response.body}');
+    }
+  }
+
+  // New endpoint: list_expense_requests
+  Future<List<Map<String, dynamic>>> listExpenseRequests({
+    required String routeId,
+    required String startDate,
+    required String endDate,
+    int start = 0,
+    int pageLength = 20,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/route_plan.apis.expense.list_expense_requests'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'route_id': routeId,
+        'start_date': startDate,
+        'end_date': endDate,
+        'start': start,
+        'page_length': pageLength,
+      }),
+    );
+
+    print("From List Expense Requests {${response.body}}");
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status'] == 200) {
+        final expenses = data['data'] as List<dynamic>? ?? [];
+        return expenses.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('API error: ${data['message']}');
+      }
+    } else {
+      throw Exception('Failed to fetch expense requests: HTTP ${response.statusCode}');
+    }
+  }
+
+  // New endpoint: ListAllSales
+  Future<List<Invoice>> listAllSales({
+    required String routeId,
+    required String startDate,
+    required String endDate,
+    int start = 0,
+    int pageLength = 20,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/route_plan.apis.sales.list_all_sales'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'start_date': startDate,
+        'end_date': endDate,
+        'start': start,
+        'route_id': routeId,
+        'page_length': pageLength,
+      }),
+    );
+
+    print("From List All Sales {${response.body}}");
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status'] == 200) {
+        final sales = data['data'] as List<dynamic>? ?? [];
+        return sales.map((json) => Invoice.fromJson(json)).toList();
+      } else {
+        throw Exception('API error: ${data['message']}');
+      }
+    } else {
+      throw Exception('Failed to fetch sales: HTTP ${response.statusCode}');
     }
   }
 }
