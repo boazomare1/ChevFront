@@ -115,7 +115,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
-      appBar: AppTheme.appBarStyle(title: 'POWER GAS HOME', centerTitle: true),
+      appBar: AppBar(
+        backgroundColor: AppTheme.primaryColor,
+        elevation: 0,
+        centerTitle: true,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/logo_round.png',
+              height: 32,
+              width: 32,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'POWER GAS HOME',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       drawer: _buildDrawer(user),
       body: SingleChildScrollView(
         child: Column(
@@ -123,7 +148,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // Header section
             AppTheme.headerSection(
               title: 'Welcome Back!',
-              subtitle: user.name,
+              subtitle: user.name.toUpperCase(),
               stats: [
                 AppTheme.statItem(
                   'Routes',

@@ -581,4 +581,35 @@ class ApiService {
       );
     }
   }
+
+  // New endpoint: Today Summary
+  Future<Map<String, dynamic>> getTodaySummary({
+    required String routeId,
+    required String day,
+    required String date,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/route_plan.apis.sales.today_summary'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'route_id': routeId, 'day': day, 'date': date}),
+    );
+
+    print("From Today Summary {${response.body}}");
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status'] == 200) {
+        return data['data'] as Map<String, dynamic>;
+      } else {
+        throw Exception('API error: ${data['message']}');
+      }
+    } else {
+      throw Exception(
+        'Failed to fetch today summary: HTTP ${response.statusCode}',
+      );
+    }
+  }
 }

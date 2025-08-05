@@ -17,11 +17,17 @@ class AppState with ChangeNotifier {
   List<DiscountSale> _discountSales = [];
   bool _isLoadingDiscountSales = false;
 
+  Map<String, dynamic>? _todaySummary;
+  bool _isLoadingTodaySummary = false;
+
   List<Invoice> get invoices => _invoices;
   bool get isLoadingInvoices => _isLoadingInvoices;
 
   List<DiscountSale> get discountSales => _discountSales;
   bool get isLoadingDiscountSales => _isLoadingDiscountSales;
+
+  Map<String, dynamic>? get todaySummary => _todaySummary;
+  bool get isLoadingTodaySummary => _isLoadingTodaySummary;
 
   Future<void> login(String email, String password) async {
     user = await apiService.login(email, password);
@@ -241,5 +247,43 @@ class AppState with ChangeNotifier {
 
     _isLoadingDiscountSales = false;
     notifyListeners();
+  }
+
+  Future<void> fetchTodaySummary({
+    required String routeId,
+    required String day,
+    required String date,
+  }) async {
+    if (user == null) {
+      print('No user available, cannot fetch today summary');
+      _todaySummary = null;
+      _isLoadingTodaySummary = false;
+      notifyListeners();
+      return;
+    }
+
+    _isLoadingTodaySummary = true;
+    notifyListeners();
+
+    try {
+      print(
+        'Fetching today summary for routeId: $routeId, day: $day, date: $date',
+      );
+      final todaySummary = await apiService.getTodaySummary(
+        routeId: routeId,
+        day: day,
+        date: date,
+      );
+
+      _todaySummary = todaySummary;
+      _isLoadingTodaySummary = false;
+      notifyListeners();
+    } catch (e) {
+      print('Error fetching today summary: $e');
+      _todaySummary = null;
+      _isLoadingTodaySummary = false;
+      notifyListeners();
+      rethrow;
+    }
   }
 }

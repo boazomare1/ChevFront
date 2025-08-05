@@ -76,19 +76,20 @@ class _SplashScreenState extends State<SplashScreen>
                       children: [
                         // Logo container
                         Container(
-                          padding: const EdgeInsets.all(30),
+                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: Colors.white.withOpacity(0.3),
                               width: 2,
                             ),
                           ),
-                          child: const Icon(
-                            Icons.gas_meter,
-                            color: Colors.white,
-                            size: 80,
+                          child: Image.asset(
+                            'assets/logo.png',
+                            height: 80,
+                            width: 80,
+                            fit: BoxFit.contain,
                           ),
                         ),
                         const SizedBox(height: 30),

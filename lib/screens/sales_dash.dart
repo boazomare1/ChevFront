@@ -1,7 +1,9 @@
 import 'package:chevenergies/screens/sales_summary.dart';
 import 'package:chevenergies/screens/today_summary.dart';
 import 'package:chevenergies/shared utils/app_theme.dart';
+import 'package:chevenergies/services/app_state.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class SalesSummaryDashScreen extends StatelessWidget {
   const SalesSummaryDashScreen({super.key});
@@ -85,10 +87,16 @@ class SalesSummaryDashScreen extends StatelessWidget {
                       title: 'Sales',
                       subtitle: 'Total Sales Report',
                       onTap: () {
+                        final user =
+                            Provider.of<AppState>(context, listen: false).user!;
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const TotalSalesScreen(),
+                            builder:
+                                (_) => TotalSalesScreen(
+                                  routeId: user.routes.first.routeId,
+                                  salespersonName: user.name,
+                                ),
                           ),
                         );
                       },

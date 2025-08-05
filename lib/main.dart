@@ -8,6 +8,7 @@ import 'package:chevenergies/screens/customers.dart';
 import 'package:chevenergies/screens/discount_sales.dart';
 import 'package:chevenergies/screens/cheque_sales.dart';
 import 'package:chevenergies/screens/invoice_details.dart';
+import 'package:chevenergies/screens/stock_keeper_dashboard.dart';
 
 import 'package:chevenergies/services/app_state.dart';
 import 'package:flutter/material.dart';
@@ -37,9 +38,22 @@ class MyApp extends StatelessWidget {
         '/':
             (context) => Consumer<AppState>(
               builder: (context, appState, _) {
-                return appState.user == null
-                    ? const LoginScreen()
-                    : const DashboardScreen();
+                if (appState.user == null) {
+                  return const LoginScreen();
+                }
+
+                // Role-based dashboard routing
+                final userRoles = appState.user!.role;
+
+                // Check for stock keeper role
+                if (userRoles.contains('stock_keeper') ||
+                    userRoles.contains('store_keeper') ||
+                    userRoles.contains('warehouse_manager')) {
+                  return const StockKeeperDashboard();
+                }
+
+                // Default to main dashboard for sales_person and other roles
+                return const DashboardScreen();
               },
             ),
         '/stops':
@@ -64,6 +78,8 @@ class MyApp extends StatelessWidget {
         '/cheque-sales': (context) => const ChequeSalesScreen(),
         '/invoice-details':
             (context) => const InvoiceDetailsScreen(invoiceId: ''),
+
+        '/stock-keeper': (context) => const StockKeeperDashboard(),
 
         '/login': (context) => const LoginScreen(),
       },

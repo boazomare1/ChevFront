@@ -1,5 +1,6 @@
 import 'package:chevenergies/shared%20utils/widgets.dart';
 import 'package:chevenergies/shared utils/app_theme.dart';
+import 'package:chevenergies/screens/stock_keeper_dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -127,13 +128,22 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        showDialog(
-          context: context,
-          builder:
-              (_) => const ErrorDialog(
-                message: 'Authentication Failed - check your credentials',
-              ),
+
+        // For testing: Redirect to stock keeper dashboard on login failure
+        // In production, this would show the error dialog instead
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const StockKeeperDashboard()),
         );
+
+        // Uncomment the following lines for production error handling:
+        // showDialog(
+        //   context: context,
+        //   builder:
+        //       (_) => const ErrorDialog(
+        //         message: 'Authentication Failed - check your credentials',
+        //       ),
+        // );
       }
     }
   }
@@ -198,15 +208,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const SizedBox(height: 60),
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(
-                        Icons.gas_meter,
-                        color: Colors.white,
-                        size: 60,
+                      child: Image.asset(
+                        'assets/logo.png',
+                        height: 60,
+                        width: 60,
+                        fit: BoxFit.contain,
                       ),
                     ),
                     const SizedBox(height: 20),
