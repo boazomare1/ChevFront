@@ -319,7 +319,20 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _makeSaleFromHistory(invoice),
+                          icon: const Icon(Icons.add_shopping_cart, size: 18),
+                          label: const Text('Make Sale'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       if (invoice.status == 'Unpaid' ||
                           invoice.status == 'Partly Paid' ||
                           invoice.status == 'Overdue')
@@ -362,6 +375,145 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
             ),
       ),
     );
+  }
+
+  void _makeSaleFromHistory(Invoice invoice) {
+    // Extract the day from the posting date
+    final postingDate = DateTime.tryParse(invoice.postingDate);
+    final day =
+        postingDate != null
+            ? _getDayFromDate(postingDate)
+            : 'MONDAY'; // fallback
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.add_shopping_cart,
+                    color: AppTheme.primaryColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Make New Sale',
+                    style: AppTheme.headingMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Create a new sale for:',
+                  style: AppTheme.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.textLight),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Customer: ${invoice.customer.customerName}',
+                        style: AppTheme.bodyMedium.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Shop: ${invoice.shop}',
+                        style: AppTheme.bodySmall.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Route: ${invoice.routeId}',
+                        style: AppTheme.bodySmall.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'This will take you to the customers list for ${day.toUpperCase()} route where you can serve this customer again.',
+                  style: AppTheme.bodySmall.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: AppTheme.textSecondary),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.pushReplacementNamed(
+                    context,
+                    '/customers',
+                    arguments: {'day': day},
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Go to Customers'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  String _getDayFromDate(DateTime date) {
+    switch (date.weekday) {
+      case DateTime.monday:
+        return 'MONDAY';
+      case DateTime.tuesday:
+        return 'TUESDAY';
+      case DateTime.wednesday:
+        return 'WEDNESDAY';
+      case DateTime.thursday:
+        return 'THURSDAY';
+      case DateTime.friday:
+        return 'FRIDAY';
+      case DateTime.saturday:
+        return 'SATURDAY';
+      case DateTime.sunday:
+        return 'SUNDAY';
+      default:
+        return 'MONDAY';
+    }
   }
 
   Future<void> _previewInvoicePDF(Invoice invoice) async {

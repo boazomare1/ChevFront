@@ -3,9 +3,75 @@ import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
+import '../services/biometric_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isBiometricEnabled = false;
+  bool _isBiometricAvailable = false;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometricStatus();
+  }
+
+  Future<void> _checkBiometricStatus() async {
+    final isAvailable = await BiometricService.isBiometricAvailable();
+    final isEnabled = await BiometricService.isBiometricEnabled();
+
+    setState(() {
+      _isBiometricAvailable = isAvailable;
+      _isBiometricEnabled = isEnabled;
+    });
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    setState(() => _isLoading = true);
+
+    try {
+      if (value) {
+        // Enable biometric
+        final isAuthenticated =
+            await BiometricService.authenticateWithBiometrics();
+        if (isAuthenticated) {
+          // Get current user credentials from AppState and enable biometric
+          final appState = Provider.of<AppState>(context, listen: false);
+          if (appState.user?.email != null) {
+            // Note: In a real app, you'd need to store the password securely
+            // For now, we'll just enable biometric without storing credentials
+            await BiometricService.enableBiometric(
+              appState.user!.email!,
+              'stored_password', // This should be the actual stored password
+            );
+            setState(() => _isBiometricEnabled = true);
+          }
+        }
+      } else {
+        // Disable biometric
+        await BiometricService.disableBiometric();
+        setState(() => _isBiometricEnabled = false);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to ${value ? 'enable' : 'disable'} biometric login',
+          ),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppTheme.successColor.withOpacity(0.1),
+                  color: AppTheme.successColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppTheme.successColor, width: 1),
                 ),
@@ -87,7 +153,9 @@ class ProfileScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withOpacity(0.1),
+                                color: AppTheme.primaryColor.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
@@ -139,7 +207,9 @@ class ProfileScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.infoColor.withOpacity(0.1),
+                                  color: AppTheme.infoColor.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
@@ -172,6 +242,98 @@ class ProfileScreen extends StatelessWidget {
                     ),
 
                   const SizedBox(height: 20),
+
+                  // Security settings card
+                  if (_isBiometricAvailable) ...[
+                    Container(
+                      decoration: AppTheme.cardDecoration,
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.warningColor.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.security,
+                                  color: AppTheme.warningColor,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'SECURITY SETTINGS',
+                                style: AppTheme.headingSmall,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryColor.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.fingerprint,
+                                  color: AppTheme.primaryColor,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Fingerprint Login',
+                                      style: AppTheme.bodyMedium.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Use fingerprint for faster login',
+                                      style: AppTheme.bodySmall.copyWith(
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (_isLoading)
+                                const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                )
+                              else
+                                Switch(
+                                  value: _isBiometricEnabled,
+                                  onChanged: _toggleBiometric,
+                                  activeColor: AppTheme.primaryColor,
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
 
                   // Logout button
                   SizedBox(

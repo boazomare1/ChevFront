@@ -17,10 +17,7 @@ class Customer {
 
   factory Customer.fromJson(dynamic json) {
     if (json is String) {
-      return Customer(
-        customerId: json,
-        customerName: json,
-      );
+      return Customer(customerId: json, customerName: json);
     }
     return Customer(
       customerId: json['customer_id'] ?? json['customer_name'] ?? '',
@@ -28,9 +25,30 @@ class Customer {
       customerType: json['customer_type'],
       customerGroup: json['customer_group'],
       territory: json['territory'],
-      paymentMethods: (json['payment_methods'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList(),
+      paymentMethods:
+          (json['payment_methods'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList(),
+    );
+  }
+}
+
+class PaymentMethod {
+  final String method;
+  final double amount;
+  final String date;
+
+  PaymentMethod({
+    required this.method,
+    required this.amount,
+    required this.date,
+  });
+
+  factory PaymentMethod.fromJson(Map<String, dynamic> json) {
+    return PaymentMethod(
+      method: json['method'] ?? '',
+      amount: (json['amount'] ?? 0).toDouble(),
+      date: json['date'] ?? '',
     );
   }
 }
@@ -47,6 +65,7 @@ class Invoice {
   final String paymentStatus;
   final String postingDate;
   final List<InvoiceItem> items;
+  final List<PaymentMethod> paymentMethods;
   String? selectedPaymentMethod;
 
   Invoice({
@@ -61,12 +80,14 @@ class Invoice {
     required this.paymentStatus,
     required this.postingDate,
     required this.items,
+    required this.paymentMethods,
     this.selectedPaymentMethod,
   });
 
   factory Invoice.fromJson(Map<String, dynamic> json) {
     final double total = (json['total_amount'] ?? 0).toDouble();
-    final double outstandingBalance = (json['outstanding_balance'] ?? 0).toDouble();
+    final double outstandingBalance =
+        (json['outstanding_balance'] ?? 0).toDouble();
     final double paidAmount = total - outstandingBalance;
     return Invoice(
       invoiceId: json['invoice_id'],
@@ -76,11 +97,20 @@ class Invoice {
       total: total,
       paidAmount: paidAmount,
       outstandingBalance: outstandingBalance,
-      status:  json['status'] ?? 'Unknown',
-      paymentStatus: json['payment_status']?? 'Unknown',
+      status: json['status'] ?? 'Unknown',
+      paymentStatus: json['payment_status'] ?? 'Unknown',
       postingDate: json['posting_date'],
-      items: (json['items'] as List<dynamic>?)?.map((item) => InvoiceItem.fromJson(item)).toList() ?? [],
-      selectedPaymentMethod: json['selected_payment_method']??'',
+      items:
+          (json['items'] as List<dynamic>?)
+              ?.map((item) => InvoiceItem.fromJson(item))
+              .toList() ??
+          [],
+      paymentMethods:
+          (json['payment_methods'] as List<dynamic>?)
+              ?.map((method) => PaymentMethod.fromJson(method))
+              .toList() ??
+          [],
+      selectedPaymentMethod: json['selected_payment_method'] ?? '',
     );
   }
 }

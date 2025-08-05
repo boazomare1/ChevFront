@@ -6,14 +6,16 @@ class Item {
   final String? warehouse;
   final double? sellingPrice;
   final double? amount;
+  final double? discountAmount;
 
   Item({
     required this.itemCode,
-     this.itemName,
-     this.description,
-     this.quantity,
-     this.warehouse,
-     this.sellingPrice,
-     this.amount,
+    this.itemName,
+    this.description,
+    this.quantity,
+    this.warehouse,
+    this.sellingPrice,
+    this.amount,
+    this.discountAmount,
   });
 }

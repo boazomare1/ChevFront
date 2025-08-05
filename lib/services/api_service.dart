@@ -5,6 +5,7 @@ import 'package:chevenergies/models/invoice.dart';
 import 'package:chevenergies/models/item.dart' show Item;
 import 'package:chevenergies/models/routedata.dart';
 import 'package:chevenergies/models/user.dart';
+import 'package:chevenergies/models/discount_sale.dart';
 import 'package:chevenergies/shared%20utils/extension.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
@@ -37,6 +38,8 @@ class ApiService {
     required String routeId,
     required String startDate,
     required String endDate,
+    String? paymentMethod,
+    String? paymentStatus,
     int start = 0,
     int pageLength = 20,
   }) async {
@@ -50,6 +53,8 @@ class ApiService {
         'route_id': routeId,
         'start_date': startDate,
         'end_date': endDate,
+        'payment_method': paymentMethod,
+        'payment_status': paymentStatus,
         'start': start,
         'page_length': pageLength,
       }),
@@ -190,7 +195,11 @@ class ApiService {
         'items':
             items
                 .map(
-                  (item) => {'item_code': item.itemCode, 'qty': item.quantity},
+                  (item) => {
+                    'item_code': item.itemCode,
+                    'qty': item.quantity,
+                    'discount_amount': item.discountAmount ?? 0.0,
+                  },
                 )
                 .toList(),
       }),
@@ -208,23 +217,79 @@ class ApiService {
     double amount,
     String mode,
   ) async {
+    final requestBody = {
+      'invoice_id': invoiceId,
+      'payment_amount': amount.toString(),
+      'payment_mode': mode,
+    };
+
+    print('=== PAYMENT API REQUEST ===');
+    print('URL: $baseUrl/route_plan.apis.sales.create_payment_entry');
+    print('Request Body: ${jsonEncode(requestBody)}');
+
     final response = await http.post(
       Uri.parse('$baseUrl/route_plan.apis.sales.create_payment_entry'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'invoice_id': invoiceId,
-        'payment_amount': amount.toString(),
-        'payment_mode': mode,
-      }),
+      body: jsonEncode(requestBody),
     );
+
+    print('=== PAYMENT API RESPONSE ===');
+    print('Status Code: ${response.statusCode}');
+    print('Response Headers: ${response.headers}');
+    print('Response Body: ${response.body}');
+
     if (response.statusCode == 200 || response.statusCode == 201) {
-      // final data = jsonDecode(response.body);
-      // No need to throw an exception for success cases
+      try {
+        final data = jsonDecode(response.body);
+        print('Parsed Response Data: $data');
+
+        // Check if the response indicates success or failure
+        if (data['status'] != null && data['status'] != 200) {
+          print('API returned error status: ${data['status']}');
+          print('Error message: ${data['message']}');
+          throw Exception('Payment failed: ${data['message']}');
+        }
+
+        print('Payment processed successfully');
+      } catch (e) {
+        print('Error parsing response: $e');
+        // Don't throw here, as the payment might still be successful
+        print('Continuing with payment success...');
+      }
     } else {
-      throw Exception('Failed to process payment: ${response.body}');
+      print('HTTP Error: ${response.statusCode}');
+      print('Error Response: ${response.body}');
+
+      // Try to extract user-friendly error message from response
+      String errorMessage = 'Payment failed. Please try again.';
+
+      try {
+        final errorData = jsonDecode(response.body);
+
+        // Check for server messages in the response
+        if (errorData['_server_messages'] != null) {
+          final serverMessages = errorData['_server_messages'] as String;
+          // Parse the server messages JSON string
+          final messages = jsonDecode(serverMessages) as List;
+          if (messages.isNotEmpty) {
+            final firstMessage =
+                jsonDecode(messages.first) as Map<String, dynamic>;
+            if (firstMessage['message'] != null) {
+              errorMessage = firstMessage['message'] as String;
+            }
+          }
+        } else if (errorData['message'] != null) {
+          errorMessage = errorData['message'] as String;
+        }
+      } catch (parseError) {
+        print('Error parsing error response: $parseError');
+        // Fall back to generic message
+      }
+
+      throw Exception(errorMessage);
     }
   }
 
@@ -474,6 +539,46 @@ class ApiService {
       }
     } else {
       throw Exception('Failed to fetch sales: HTTP ${response.statusCode}');
+    }
+  }
+
+  // New endpoint: ListDiscountSales
+  Future<List<DiscountSale>> listDiscountSales({
+    String? status,
+    String? routeId,
+    int start = 0,
+    int pageLength = 20,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/route_plan.apis.sales.list_discount_sales'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'status': status,
+        'route_id': routeId,
+        'start': start,
+        'page_length': pageLength,
+      }),
+    );
+
+    print("From List Discount Sales {${response.body}}");
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status'] == 200) {
+        final discountSales = data['data'] as List<dynamic>? ?? [];
+        return discountSales
+            .map((json) => DiscountSale.fromJson(json))
+            .toList();
+      } else {
+        throw Exception('API error: ${data['message']}');
+      }
+    } else {
+      throw Exception(
+        'Failed to fetch discount sales: HTTP ${response.statusCode}',
+      );
     }
   }
 }

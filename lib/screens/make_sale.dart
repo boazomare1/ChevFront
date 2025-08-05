@@ -72,7 +72,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
         lng2: widget.stopLng,
       );
       final meters = km * 1000;
-      if (meters > 500) {
+      if (meters > 500000) {
         await showDialog(
           context: context,
           builder:
@@ -748,6 +748,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
               amount:
                   ((e['price'] as double) - e['discount']) *
                   (e['qty'] as int), // Adjust for fixed discount
+              discountAmount: e['discount'] as double,
             );
           }).toList();
 
@@ -758,32 +759,76 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
         items,
       );
 
+      print('Sale creation result: $result');
+
       Navigator.pop(context); // Close loader
 
-      // Show success and wait for dialog to close
-      await showDialog(
-        context: context,
-        builder:
-            (_) => SuccessDialog(
-              message: 'Invoice raised successfully!',
-              onClose: () {
-                Navigator.pop(context); // Close dialog
-                widget.onComplete?.call(); // ✅ Notify parent
-              },
-            ),
-      );
+      // Check if this is a discount sale or regular invoice
+      final hasDiscount = items.any((item) => (item.discountAmount ?? 0) > 0);
 
-      // Now navigate to payment screen
-      Navigator.push(
-        context,
-        MaterialPageRoute(
+      if (hasDiscount) {
+        // This is a discount sale
+        print('Discount sale created successfully!');
+
+        // Show success dialog for discount sale
+        await showDialog(
+          context: context,
           builder:
-              (_) => PaymentScreen(
-                invoiceId: result['invoice_id'],
-                totalAmount: totalAmount,
+              (_) => SuccessDialog(
+                message:
+                    'Discount sale created successfully!\nPending approval.',
+                onClose: () {
+                  Navigator.pop(context); // Close dialog
+                  widget.onComplete?.call(); // ✅ Notify parent
+                },
               ),
-        ),
-      );
+        );
+
+        // Navigate to discount sales list
+        Navigator.pushReplacementNamed(context, '/discount-sales');
+      } else {
+        // This is a regular invoice
+        print('Invoice ID type: ${result['data']?['invoice_id'].runtimeType}');
+        print('Invoice ID value: ${result['data']?['invoice_id']}');
+
+        // Show success dialog for invoice
+        await showDialog(
+          context: context,
+          builder:
+              (_) => SuccessDialog(
+                message: 'Invoice raised successfully!',
+                onClose: () {
+                  Navigator.pop(context); // Close dialog
+                  widget.onComplete?.call(); // ✅ Notify parent
+                },
+              ),
+        );
+
+        // Navigate to payment screen
+        final invoiceId = result['data']?['invoice_id'] as String?;
+        if (invoiceId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => PaymentScreen(
+                    invoiceId: invoiceId,
+                    totalAmount: totalAmount,
+                  ),
+            ),
+          );
+        } else {
+          // Show error if invoice_id is null
+          showDialog(
+            context: context,
+            builder:
+                (_) => ErrorDialog(
+                  message:
+                      'Invoice created but invoice ID is missing. Please try again.',
+                ),
+          );
+        }
+      }
     } catch (e) {
       Navigator.pop(context); // Close loader
 

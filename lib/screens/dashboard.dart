@@ -8,6 +8,9 @@ import 'package:chevenergies/screens/sales_dash.dart';
 import 'package:chevenergies/screens/sales_history.dart';
 import 'package:chevenergies/screens/stock_screen.dart';
 import 'package:chevenergies/screens/customers.dart';
+import 'package:chevenergies/screens/discount_sales.dart';
+import 'package:chevenergies/screens/cheque_sales.dart';
+
 import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -98,7 +101,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onTap: () {
               Navigator.pop(context);
               Provider.of<AppState>(context, listen: false).logout();
-              Navigator.pushReplacementNamed(context, '/login');
+              Navigator.pushReplacementNamed(context, '/');
             },
           ),
         ],
@@ -173,6 +176,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'icon': Icons.dashboard,
         'title': 'Sales Dashboard',
         'route': '/sales-dash',
+      },
+      {
+        'icon': Icons.local_offer,
+        'title': 'Discount Sales',
+        'route': '/discount-sales',
+      },
+      {
+        'icon': Icons.account_balance,
+        'title': 'Cheque Sales',
+        'route': '/cheque-sales',
       },
     ];
 
@@ -373,6 +386,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const SalesSummaryDashScreen()),
+        );
+        break;
+      case '/discount-sales':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DiscountSalesScreen()),
+        );
+        break;
+      case '/cheque-sales':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChequeSalesScreen()),
         );
         break;
     }

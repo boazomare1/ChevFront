@@ -3,6 +3,7 @@ import 'package:chevenergies/models/item.dart';
 import 'package:chevenergies/models/routedata.dart';
 import 'package:chevenergies/models/user.dart';
 import 'package:chevenergies/models/invoice.dart';
+import 'package:chevenergies/models/discount_sale.dart';
 import 'package:intl/intl.dart';
 import 'api_service.dart';
 
@@ -13,8 +14,14 @@ class AppState with ChangeNotifier {
   List<Invoice> _invoices = [];
   bool _isLoadingInvoices = false;
 
+  List<DiscountSale> _discountSales = [];
+  bool _isLoadingDiscountSales = false;
+
   List<Invoice> get invoices => _invoices;
   bool get isLoadingInvoices => _isLoadingInvoices;
+
+  List<DiscountSale> get discountSales => _discountSales;
+  bool get isLoadingDiscountSales => _isLoadingDiscountSales;
 
   Future<void> login(String email, String password) async {
     user = await apiService.login(email, password);
@@ -23,11 +30,10 @@ class AppState with ChangeNotifier {
   }
 
   Future<void> logout() async {
-  user = null;
-  apiService.token = null;
-  notifyListeners();
-}
-
+    user = null;
+    apiService.token = null;
+    notifyListeners();
+  }
 
   Future<List<RouteData>> getRoutes(String day) async {
     if (user == null || user!.routes.isEmpty) {
@@ -64,6 +70,9 @@ class AppState with ChangeNotifier {
   Future<void> fetchInvoices({
     required DateTime startDate,
     required DateTime endDate,
+    String? routeId,
+    String? paymentMethod,
+    String? paymentStatus,
     int start = 0,
     int pageLength = 20,
   }) async {
@@ -78,19 +87,21 @@ class AppState with ChangeNotifier {
     _isLoadingInvoices = true;
     notifyListeners();
 
-    final routeId = user!.routes.first.routeId;
+    final currentRouteId = routeId ?? user!.routes.first.routeId;
     final fmt = DateFormat('yyyy-MM-dd');
     final startStr = fmt.format(startDate);
     final endStr = fmt.format(endDate);
 
     try {
       print(
-        'Fetching invoices for routeId: $routeId, startDate: $startStr, endDate: $endStr',
+        'Fetching invoices for routeId: $currentRouteId, startDate: $startStr, endDate: $endStr, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus',
       );
       final invoices = await apiService.listInvoices(
-        routeId: routeId,
+        routeId: currentRouteId,
         startDate: startStr,
         endDate: endStr,
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentStatus,
         start: start,
         pageLength: pageLength,
       );
@@ -153,7 +164,8 @@ class AppState with ChangeNotifier {
       logoBase64: logoBase64,
     );
   }
-    Future<Map<String, dynamic>> raiseExpenseRequest({
+
+  Future<Map<String, dynamic>> raiseExpenseRequest({
     required String date,
     required double requestedAmount,
     required String description,
@@ -192,4 +204,42 @@ class AppState with ChangeNotifier {
     );
   }
 
+  Future<void> fetchDiscountSales({
+    String? status,
+    String? routeId,
+    int start = 0,
+    int pageLength = 20,
+  }) async {
+    if (user == null) {
+      print('No user available, setting discount sales to empty list');
+      _discountSales = [];
+      _isLoadingDiscountSales = false;
+      notifyListeners();
+      return;
+    }
+
+    _isLoadingDiscountSales = true;
+    notifyListeners();
+
+    final currentRouteId = routeId ?? user!.routes.first.routeId;
+
+    try {
+      print('Fetching discount sales for routeId: $currentRouteId');
+      final discountSales = await apiService.listDiscountSales(
+        status: status,
+        routeId: currentRouteId,
+        start: start,
+        pageLength: pageLength,
+      );
+      print('Successfully fetched ${discountSales.length} discount sales');
+      _discountSales = discountSales;
+    } catch (e, stackTrace) {
+      print('Error fetching discount sales: $e');
+      print('Stack trace: $stackTrace');
+      _discountSales = [];
+    }
+
+    _isLoadingDiscountSales = false;
+    notifyListeners();
+  }
 }

@@ -15,29 +15,33 @@ class ExpenditureScreen extends StatefulWidget {
 
 class _ExpenditureScreenState extends State<ExpenditureScreen> {
   DateTime selectedDate = DateTime.now();
+  late DateTime startDate; // Will be initialized in initState
+  DateTime endDate = DateTime.now();
   final List<Expenditure> _expenditures = [];
 
   bool _loading = false;
   @override
   void initState() {
     super.initState();
+    startDate = _getStartOfWeek(
+      DateTime.now(),
+    ); // Initialize start date to Monday of current week
     _loadExpenditures();
   }
 
   Future<void> _refresh() async {
-    setState(() => _loading = true);
     _loadExpenditures();
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _loading = false);
   }
 
   void _loadExpenditures() {
+    setState(() => _loading = true);
     final appState = Provider.of<AppState>(context, listen: false);
+    final user = appState.user!;
     appState
         .listExpenseRequests(
-          routeId: "KDQ 154P",
-          startDate: selectedDate.toString(),
-          endDate: selectedDate.toString(),
+          routeId: user.routes.first.routeId,
+          startDate: startDate.toString(),
+          endDate: endDate.toString(),
         )
         .then((expenses) {
           debugPrint('Raw expenses data: $expenses');
@@ -47,10 +51,12 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
             _expenditures.addAll(
               expenses.map((json) => Expenditure.fromJson(json)).toList(),
             );
+            _loading = false;
           });
         })
         .catchError((error) {
           debugPrint('Error loading expenditures: $error');
+          setState(() => _loading = false);
         });
   }
 
@@ -99,7 +105,9 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
             child: RefreshIndicator(
               onRefresh: _refresh,
               child:
-                  _expenditures.isEmpty && !_loading
+                  _loading
+                      ? _buildLoadingState()
+                      : _expenditures.isEmpty
                       ? _buildEmptyState()
                       : ListView.builder(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -156,18 +164,18 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Date display
+            // Date range display
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.calendar_today,
+                  Icons.date_range,
                   color: Colors.white.withOpacity(0.9),
                   size: 20,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _formatDate(selectedDate),
+                  '${_formatDate(startDate)} - ${_formatDate(endDate)}',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 16,
@@ -442,6 +450,42 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
     );
   }
 
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.pinkAccent.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: const CircularProgressIndicator(
+              color: Colors.pinkAccent,
+              strokeWidth: 3,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Loading Expenditures...',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Please wait while we fetch your expense claims',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -478,7 +522,7 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
   void _showDatePicker() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
+      initialDate: endDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       builder: (context, child) {
@@ -490,9 +534,12 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
         );
       },
     );
-    if (picked != null && picked != selectedDate) {
+    if (picked != null && picked != endDate) {
       setState(() {
-        selectedDate = picked;
+        endDate = picked;
+        startDate = _getStartOfWeek(
+          picked,
+        ); // Set start date to Monday of the selected week
       });
       _loadExpenditures();
     }
@@ -500,5 +547,12 @@ class _ExpenditureScreenState extends State<ExpenditureScreen> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  DateTime _getStartOfWeek(DateTime date) {
+    // Get Monday of the current week
+    int daysFromMonday =
+        date.weekday - 1; // Monday = 1, so daysFromMonday = 0 for Monday
+    return date.subtract(Duration(days: daysFromMonday));
   }
 }
