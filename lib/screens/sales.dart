@@ -90,7 +90,7 @@ class NewSaleScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Icon(
-                      Icons.point_of_sale,
+                      Icons.shopping_cart,
                       color: Colors.white,
                       size: 40,
                     ),

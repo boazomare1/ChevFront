@@ -1,18 +1,195 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Colors
-  static const Color primaryColor = Colors.pinkAccent;
-  static const Color secondaryColor = Colors.orange;
-  static const Color successColor = Colors.green;
-  static const Color errorColor = Colors.red;
-  static const Color warningColor = Colors.orange;
-  static const Color infoColor = Colors.blue;
-  static const Color backgroundColor = Color(0xFFF5F5F5);
-  static const Color cardColor = Colors.white;
-  static const Color textPrimary = Color(0xFF2C3E50);
-  static const Color textSecondary = Color(0xFF7F8C8D);
-  static const Color textLight = Color(0xFFBDC3C7);
+  // Light Theme Colors
+  static const Color lightPrimaryColor = Colors.pinkAccent;
+  static const Color lightSecondaryColor = Colors.orange;
+  static const Color lightSuccessColor = Colors.green;
+  static const Color lightErrorColor = Colors.red;
+  static const Color lightWarningColor = Colors.orange;
+  static const Color lightInfoColor = Colors.blue;
+  static const Color lightBackgroundColor = Color(0xFFF5F5F5);
+  static const Color lightCardColor = Colors.white;
+  static const Color lightTextPrimary = Color(0xFF2C3E50);
+  static const Color lightTextSecondary = Color(0xFF7F8C8D);
+  static const Color lightTextLight = Color(0xFFBDC3C7);
+  static const Color lightSurfaceColor = Colors.white;
+  static const Color lightDividerColor = Color(0xFFE0E0E0);
+
+  // Dark Theme Colors
+  static const Color darkPrimaryColor = Colors.pinkAccent;
+  static const Color darkSecondaryColor = Colors.orange;
+  static const Color darkSuccessColor = Colors.green;
+  static const Color darkErrorColor = Colors.red;
+  static const Color darkWarningColor = Colors.orange;
+  static const Color darkInfoColor = Colors.blue;
+  static const Color darkBackgroundColor = Color(0xFF121212);
+  static const Color darkCardColor = Color(0xFF1E1E1E);
+  static const Color darkTextPrimary = Color(0xFFE0E0E0);
+  static const Color darkTextSecondary = Color(0xFFB0B0B0);
+  static const Color darkTextLight = Color(0xFF808080);
+  static const Color darkSurfaceColor = Color(0xFF1E1E1E);
+  static const Color darkDividerColor = Color(0xFF404040);
+
+  // Static colors for backward compatibility (use these in screens)
+  static const Color primaryColor = lightPrimaryColor;
+  static const Color secondaryColor = lightSecondaryColor;
+  static const Color successColor = lightSuccessColor;
+  static const Color errorColor = lightErrorColor;
+  static const Color warningColor = lightWarningColor;
+  static const Color infoColor = lightInfoColor;
+  static const Color backgroundColor = lightBackgroundColor;
+  static const Color cardColor = lightCardColor;
+  static const Color textPrimary = lightTextPrimary;
+  static const Color textSecondary = lightTextSecondary;
+  static const Color textLight = lightTextLight;
+  static const Color surfaceColor = lightSurfaceColor;
+  static const Color dividerColor = lightDividerColor;
+
+  // Helper method to get colors from BuildContext (preferred method)
+  static Color getPrimaryColor(BuildContext context) {
+    return Theme.of(context).colorScheme.primary;
+  }
+
+  static Color getBackgroundColor(BuildContext context) {
+    return Theme.of(context).scaffoldBackgroundColor;
+  }
+
+  static Color getCardColor(BuildContext context) {
+    return Theme.of(context).cardColor;
+  }
+
+  static Color getTextPrimaryColor(BuildContext context) {
+    return Theme.of(context).colorScheme.onSurface;
+  }
+
+  static Color getTextSecondaryColor(BuildContext context) {
+    return Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
+  }
+
+  // Theme mode flag (will be set by theme provider)
+  static bool _isDarkMode = false;
+
+  static void setDarkMode(bool isDark) {
+    _isDarkMode = isDark;
+  }
+
+  // Theme Data
+  static ThemeData get lightTheme => ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.light,
+    primaryColor: lightPrimaryColor,
+    scaffoldBackgroundColor: lightBackgroundColor,
+    cardColor: lightCardColor,
+    dividerColor: lightDividerColor,
+    colorScheme: const ColorScheme.light(
+      primary: lightPrimaryColor,
+      secondary: lightSecondaryColor,
+      surface: lightSurfaceColor,
+      background: lightBackgroundColor,
+      error: lightErrorColor,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: lightTextPrimary,
+      onBackground: lightTextPrimary,
+      onError: Colors.white,
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: lightPrimaryColor,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: true,
+    ),
+    cardTheme: CardTheme(
+      color: lightCardColor,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.grey[100],
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: lightDividerColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: lightDividerColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: lightPrimaryColor, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: lightPrimaryColor,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+      ),
+    ),
+  );
+
+  static ThemeData get darkTheme => ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    primaryColor: darkPrimaryColor,
+    scaffoldBackgroundColor: darkBackgroundColor,
+    cardColor: darkCardColor,
+    dividerColor: darkDividerColor,
+    colorScheme: const ColorScheme.dark(
+      primary: darkPrimaryColor,
+      secondary: darkSecondaryColor,
+      surface: darkSurfaceColor,
+      background: darkBackgroundColor,
+      error: darkErrorColor,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: darkTextPrimary,
+      onBackground: darkTextPrimary,
+      onError: Colors.white,
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: darkPrimaryColor,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: true,
+    ),
+    cardTheme: CardTheme(
+      color: darkCardColor,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: darkCardColor,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: darkDividerColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: darkDividerColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: darkPrimaryColor, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: darkPrimaryColor,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+      ),
+    ),
+  );
 
   // Text Styles
   static const TextStyle headingLarge = TextStyle(
@@ -84,15 +261,11 @@ class AppTheme {
   }
 
   // Card Style
-  static BoxDecoration cardDecoration = BoxDecoration(
+  static const BoxDecoration cardDecoration = BoxDecoration(
     color: cardColor,
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.all(Radius.circular(16)),
     boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.05),
-        blurRadius: 10,
-        offset: const Offset(0, 4),
-      ),
+      BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4)),
     ],
   );
 
@@ -158,9 +331,9 @@ class AppTheme {
   }) {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: primaryColor,
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
         ),
@@ -288,7 +461,7 @@ class AppTheme {
           const SizedBox(height: 20),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: textSecondary,
@@ -297,7 +470,7 @@ class AppTheme {
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 14, color: textLight),
+            style: TextStyle(fontSize: 14, color: textLight),
             textAlign: TextAlign.center,
           ),
         ],
@@ -317,11 +490,11 @@ class AppTheme {
       prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[400]!),
+        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[400]!),
+        borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -342,7 +515,7 @@ class AppTheme {
   }
 
   // Button Styles
-  static ButtonStyle primaryButtonStyle = ElevatedButton.styleFrom(
+  static ButtonStyle get primaryButtonStyle => ElevatedButton.styleFrom(
     backgroundColor: primaryColor,
     foregroundColor: Colors.white,
     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -350,8 +523,8 @@ class AppTheme {
     elevation: 2,
   );
 
-  static ButtonStyle secondaryButtonStyle = ElevatedButton.styleFrom(
-    backgroundColor: Colors.grey[200],
+  static ButtonStyle get secondaryButtonStyle => ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFFE0E0E0),
     foregroundColor: textPrimary,
     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

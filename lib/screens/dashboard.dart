@@ -13,8 +13,10 @@ import 'package:chevenergies/screens/cheque_sales.dart';
 import 'package:chevenergies/screens/biometric_settings.dart';
 import 'package:chevenergies/screens/change_password.dart';
 import 'package:chevenergies/screens/update_profile_image.dart';
+import 'package:chevenergies/screens/settings.dart';
 
 import 'package:chevenergies/shared utils/app_theme.dart';
+import 'package:chevenergies/services/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
@@ -122,6 +124,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             },
           ),
 
+          ListTile(
+            leading: const Icon(Icons.settings, color: AppTheme.textPrimary),
+            title: const Text('Settings', style: AppTheme.bodyMedium),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+          ),
+
           const Divider(),
 
           ListTile(
@@ -159,22 +173,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Image.asset(
               'assets/logo_round.png',
-              height: 32,
-              width: 32,
+              height: 28,
+              width: 28,
               fit: BoxFit.contain,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             const Text(
-              'POWER GAS HOME',
+              'POWER GAS',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return IconButton(
+                icon: Icon(
+                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  themeProvider.toggleTheme();
+                },
+                tooltip: 'Toggle Dark Mode',
+              );
+            },
+          ),
+        ],
       ),
       drawer: _buildDrawer(user),
       body: SingleChildScrollView(
@@ -191,7 +221,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Icons.route,
                 ),
                 AppTheme.statItem('Today', '0', Icons.today),
-                AppTheme.statItem('Total', '0', Icons.analytics),
+                AppTheme.statItem('Total', '0', Icons.inventory_2),
               ],
             ),
 
@@ -220,7 +250,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildQuickActionsGrid() {
     final actions = [
       {'icon': Icons.shopping_cart, 'title': 'Make Sale', 'route': '/sales'},
-      {'icon': Icons.inventory, 'title': 'Stock', 'route': '/stock'},
+      {'icon': Icons.inventory_2, 'title': 'Stock', 'route': '/stock'},
       {
         'icon': Icons.receipt_long,
         'title': 'Expenditures',
@@ -351,7 +381,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // Placeholder for recent activity
           _buildActivityItem(
             icon: Icons.shopping_cart,
-            title: 'New sale completed',
+            title: 'LPG cylinder sale completed',
             subtitle: '2 hours ago',
             color: AppTheme.successColor,
           ),
@@ -362,8 +392,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             color: AppTheme.warningColor,
           ),
           _buildActivityItem(
-            icon: Icons.inventory,
-            title: 'Stock updated',
+            icon: Icons.inventory_2,
+            title: 'Gas cylinder stock updated',
             subtitle: '1 day ago',
             color: AppTheme.infoColor,
           ),

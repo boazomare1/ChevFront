@@ -283,7 +283,7 @@ class _SalespeopleScreenState extends State<SalespeopleScreen> {
                       decoration: AppTheme.inputDecoration(
                         label: 'Search salesperson',
                         hintText:
-                            'Search salesperson (using name or number pl...)',
+                            'Search by name, ID, phone, or vehicle number',
                         prefixIcon: Icons.search,
                       ),
                     ),
@@ -430,7 +430,7 @@ class _SalespeopleScreenState extends State<SalespeopleScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        salesperson.code,
+                        'ID: ${salesperson.code}',
                         style: AppTheme.bodyMedium.copyWith(
                           color: AppTheme.primaryColor,
                           fontWeight: FontWeight.bold,
@@ -440,7 +440,7 @@ class _SalespeopleScreenState extends State<SalespeopleScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        salesperson.vehicle,
+                        'Vehicle: ${salesperson.vehicle}',
                         style: AppTheme.bodyMedium.copyWith(
                           color: AppTheme.primaryColor,
                           fontWeight: FontWeight.bold,

@@ -1,6 +1,6 @@
-# Chev Energies - Power Gas Management App
+# Chev Energies - LPG Sales Management System
 
-A comprehensive Flutter application for managing Power Gas sales, inventory, and customer relationships. Built for salespeople and stock keepers to efficiently handle their daily operations.
+A comprehensive Flutter application for managing LPG cylinder sales, accessories, and customer relationships. Built for salespeople and stock keepers to efficiently handle their daily operations in the gas distribution business.
 
 ## 📱 Features
 
@@ -17,18 +17,21 @@ A comprehensive Flutter application for managing Power Gas sales, inventory, and
 - **Recent Activity**: Track recent sales and operations
 
 ### 💰 Sales Management
-- **Make Sales**: Create new sales transactions
-- **Sales History**: View and search past sales
+- **Make Sales**: Create new LPG cylinder sales transactions
+- **Sales History**: View and search past gas sales
 - **Sales Dashboard**: Analytics and summary reports
-- **Discount Sales**: Handle discounted transactions
+- **Discount Sales**: Handle discounted cylinder transactions
 - **Cheque Sales**: Process cheque-based payments
 - **Payment Processing**: Handle various payment methods
 
 ### 📦 Inventory Management
-- **Current Stock**: View and manage available inventory
-- **Stock Screen**: Detailed stock management interface
-- **Stock Reports**: Generate inventory reports
-- **Stock Updates**: Real-time inventory tracking
+- **Current Stock**: View and manage available gas cylinders and accessories
+- **Stock Management**: Comprehensive LPG inventory management interface
+- **Stock Reports**: Generate cylinder inventory reports and analytics
+- **Stock Updates**: Real-time gas cylinder tracking
+- **Add Items**: Add new cylinders and accessories with detailed forms
+- **Stock Transfer**: Transfer cylinders between locations
+- **Stock Analytics**: Advanced LPG inventory analytics and insights
 
 ### 👥 Customer Management
 - **Customer Database**: Manage customer information
@@ -45,10 +48,15 @@ A comprehensive Flutter application for managing Power Gas sales, inventory, and
 ### 🛠️ Additional Features
 - **Profile Management**: Update user information and profile image
 - **Password Management**: Change account password securely
-- **Settings**: Configure app preferences
+- **Settings**: Configure app preferences and user preferences
 - **Biometric Settings**: Manage fingerprint authentication
 - **Offline Support**: Work without internet connection
 - **Data Export**: Export reports in various formats
+- **Stock Analytics**: Advanced inventory analytics and reporting
+- **Multi-location Support**: Manage inventory across multiple locations
+- **Supplier Management**: Track suppliers and manage relationships
+- **Category Management**: Organize inventory by categories
+- **Dark Mode**: Complete dark theme support with automatic switching
 
 ## 🚀 Installation
 
@@ -167,15 +175,35 @@ flutter build appbundle --release
 
 **Stock Management** (Stock Keepers):
 1. Stock Keeper Dashboard → "Stock Management"
-2. Update stock levels
-3. Add new items
-4. Generate stock reports
+2. View all inventory items with search and filtering
+3. Check stock levels and status
+4. Monitor item categories and locations
+5. Track stock movements and updates
 
 **Stock Reports**:
 1. Stock Keeper Dashboard → "Stock Reports"
-2. View inventory analytics
-3. Export stock data
-4. Track stock movements
+2. View comprehensive inventory analytics
+3. Monitor key metrics (total value, items, categories)
+4. Track top items by value
+5. Analyze category breakdown with visual charts
+6. Export stock data and reports
+
+**Add New Items**:
+1. Stock Keeper Dashboard → "Add Items" (Quick Actions)
+2. Fill detailed item information (name, category, price)
+3. Set initial quantity and unit
+4. Specify storage location and supplier
+5. Add optional description and notes
+6. Auto-generate item IDs based on category
+
+**Stock Transfer**:
+1. Stock Keeper Dashboard → "Stock Transfer" (Quick Actions)
+2. Select item to transfer from available inventory
+3. Choose source and destination locations
+4. Specify transfer quantity
+5. Add transfer notes
+6. Validate transfer requirements
+7. Initiate transfer process
 
 ### 👥 Customer Management
 
@@ -226,6 +254,13 @@ flutter build appbundle --release
 3. Change profile picture
 4. Update contact details
 
+**Dark Mode Usage**:
+1. **Enable Dark Mode**: Settings → Toggle "Dark Mode" switch
+2. **Automatic Switching**: Theme changes instantly across all screens
+3. **Persistent Settings**: Your preference is saved and restored
+4. **System Integration**: Follows Material Design 3 guidelines
+5. **Accessibility**: Better visibility in low-light conditions
+
 **Fingerprint Settings**:
 1. Dashboard drawer → "Fingerprint Settings"
 2. Enable/disable fingerprint authentication
@@ -247,14 +282,23 @@ flutter build appbundle --release
 
 ### 📱 App Navigation
 
-**Drawer Menu** (Access from dashboard):
+**Drawer Menu** (Main Dashboard):
 - Profile
 - Change Password
 - Update Profile Image
 - Fingerprint Settings
 - Logout
 
-**Quick Actions Grid**:
+**Drawer Menu** (Stock Keeper Dashboard):
+- Dashboard
+- Salespeople
+- Stock Management
+- Stock Reports
+- Settings
+- Fingerprint Settings
+- Logout
+
+**Quick Actions Grid** (Main Dashboard):
 - Make Sale
 - Stock
 - Expenditures
@@ -263,6 +307,15 @@ flutter build appbundle --release
 - Sales Dashboard
 - Discount Sales
 - Cheque Sales
+
+**Quick Actions Grid** (Stock Keeper Dashboard):
+- Salespeople
+- Stock Count
+- Stock Reports
+- Add Items
+- Stock Transfer
+- Settings
+- Dark Mode Toggle
 
 ## 🔧 Technical Details
 
@@ -363,6 +416,21 @@ This application is proprietary software developed for Chev Energies. All rights
 
 ### Recent Updates
 
+**Dark Mode Implementation**:
+- **Theme Provider**: Complete theme management system with persistent storage
+- **Light & Dark Themes**: Comprehensive color schemes for both light and dark modes
+- **Dynamic Theme Switching**: Real-time theme switching across the entire application
+- **Persistent Settings**: Theme preference saved and restored on app restart
+- **Consistent UI**: All screens and components support both themes seamlessly
+
+**Complete Stock Keeper Dashboard Implementation**:
+- **Stock Management Screen**: Comprehensive inventory management with search, filtering, and status tracking
+- **Stock Reports Screen**: Advanced analytics with key metrics, top items, and category breakdown
+- **Settings Screen**: Complete app settings with account, preferences, security, notifications, and data management
+- **Add Items Screen**: Detailed form for adding new inventory items with validation and auto-ID generation
+- **Stock Transfer Screen**: Transfer inventory between locations with validation and tracking
+- Enhanced navigation and integration with existing screens
+
 **Fingerprint Authentication Fix**:
 - Fixed credential synchronization between SharedPreferences and BiometricService
 - Resolved issue where fingerprint login failed despite successful biometric testing
@@ -381,6 +449,7 @@ This application is proprietary software developed for Chev Energies. All rights
 - Improved error handling and user feedback
 - Enhanced UI/UX with consistent design patterns
 - Added comprehensive validation and security measures
+- Implemented demo data for testing and development
 
 ---
 

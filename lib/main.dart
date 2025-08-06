@@ -14,14 +14,19 @@ import 'package:chevenergies/screens/change_password.dart';
 import 'package:chevenergies/screens/update_profile_image.dart';
 
 import 'package:chevenergies/services/app_state.dart';
+import 'package:chevenergies/services/theme_provider.dart';
+import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => AppState(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => AppState()),
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -32,62 +37,73 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Chev Energies',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      debugShowCheckedModeBanner: false,
-      initialRoute: '/',
-      routes: {
-        '/':
-            (context) => Consumer<AppState>(
-              builder: (context, appState, _) {
-                if (appState.user == null) {
-                  return const LoginScreen();
-                }
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        // Update AppTheme with current theme mode
+        AppTheme.setDarkMode(themeProvider.isDarkMode);
 
-                // Role-based dashboard routing
-                final userRoles = appState.user!.role;
+        return MaterialApp(
+          title: 'Chev Energies',
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeProvider.themeMode,
+          debugShowCheckedModeBanner: false,
+          initialRoute: '/',
+          routes: {
+            '/':
+                (context) => Consumer<AppState>(
+                  builder: (context, appState, _) {
+                    if (appState.user == null) {
+                      return const LoginScreen();
+                    }
 
-                // Check for stock keeper role
-                if (userRoles.contains('stock_keeper') ||
-                    userRoles.contains('store_keeper') ||
-                    userRoles.contains('warehouse_manager')) {
-                  return const StockKeeperDashboard();
-                }
+                    // Role-based dashboard routing
+                    final userRoles = appState.user!.role;
 
-                // Default to main dashboard for sales_person and other roles
-                return const DashboardScreen();
-              },
-            ),
-        '/stops':
-            (context) => CustomersScreen(
-              day: ModalRoute.of(context)!.settings.arguments as String,
-            ),
-        '/items':
-            (context) => ItemsScreen(
-              routeId: ModalRoute.of(context)!.settings.arguments as String,
-            ),
-        '/invoice':
-            (context) => InvoiceScreen(
-              routeId: ModalRoute.of(context)!.settings.arguments as String,
-              item: ModalRoute.of(context)!.settings.arguments as Item,
-            ),
-        '/payment':
-            (context) => PaymentScreen(
-              invoiceId: ModalRoute.of(context)!.settings.arguments as String,
-              totalAmount: 0,
-            ),
-        '/discount-sales': (context) => const DiscountSalesScreen(),
-        '/cheque-sales': (context) => const ChequeSalesScreen(),
-        '/invoice-details':
-            (context) => const InvoiceDetailsScreen(invoiceId: ''),
+                    // Check for stock keeper role
+                    if (userRoles.contains('stock_keeper') ||
+                        userRoles.contains('store_keeper') ||
+                        userRoles.contains('warehouse_manager')) {
+                      return const StockKeeperDashboard();
+                    }
 
-        '/stock-keeper': (context) => const StockKeeperDashboard(),
-        '/biometric-settings': (context) => const BiometricSettingsScreen(),
-        '/change-password': (context) => const ChangePasswordScreen(),
-        '/update-profile-image': (context) => const UpdateProfileImageScreen(),
+                    // Default to main dashboard for sales_person and other roles
+                    return const DashboardScreen();
+                  },
+                ),
+            '/stops':
+                (context) => CustomersScreen(
+                  day: ModalRoute.of(context)!.settings.arguments as String,
+                ),
+            '/items':
+                (context) => ItemsScreen(
+                  routeId: ModalRoute.of(context)!.settings.arguments as String,
+                ),
+            '/invoice':
+                (context) => InvoiceScreen(
+                  routeId: ModalRoute.of(context)!.settings.arguments as String,
+                  item: ModalRoute.of(context)!.settings.arguments as Item,
+                ),
+            '/payment':
+                (context) => PaymentScreen(
+                  invoiceId:
+                      ModalRoute.of(context)!.settings.arguments as String,
+                  totalAmount: 0,
+                ),
+            '/discount-sales': (context) => const DiscountSalesScreen(),
+            '/cheque-sales': (context) => const ChequeSalesScreen(),
+            '/invoice-details':
+                (context) => const InvoiceDetailsScreen(invoiceId: ''),
 
-        '/login': (context) => const LoginScreen(),
+            '/stock-keeper': (context) => const StockKeeperDashboard(),
+            '/biometric-settings': (context) => const BiometricSettingsScreen(),
+            '/change-password': (context) => const ChangePasswordScreen(),
+            '/update-profile-image':
+                (context) => const UpdateProfileImageScreen(),
+
+            '/login': (context) => const LoginScreen(),
+          },
+        );
       },
     );
   }

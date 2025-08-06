@@ -2,7 +2,13 @@ import 'package:chevenergies/models/user.dart';
 import 'package:chevenergies/screens/salespeople.dart';
 import 'package:chevenergies/screens/current_stock.dart';
 import 'package:chevenergies/screens/biometric_settings.dart';
+import 'package:chevenergies/screens/stock_management.dart';
+import 'package:chevenergies/screens/stock_reports.dart';
+import 'package:chevenergies/screens/settings.dart';
+import 'package:chevenergies/screens/add_items.dart';
+import 'package:chevenergies/screens/stock_transfer.dart';
 import 'package:chevenergies/shared utils/app_theme.dart';
+import 'package:chevenergies/services/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
@@ -41,7 +47,7 @@ class _StockKeeperDashboardState extends State<StockKeeperDashboard> {
               child: const CircleAvatar(
                 backgroundColor: Colors.white,
                 child: Icon(
-                  Icons.inventory,
+                  Icons.inventory_2,
                   size: 40,
                   color: AppTheme.primaryColor,
                 ),
@@ -77,10 +83,10 @@ class _StockKeeperDashboardState extends State<StockKeeperDashboard> {
             title: const Text('Stock Management', style: AppTheme.bodyMedium),
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Stock Management coming soon...'),
-                  backgroundColor: AppTheme.primaryColor,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const StockManagementScreen(),
                 ),
               );
             },
@@ -91,11 +97,9 @@ class _StockKeeperDashboardState extends State<StockKeeperDashboard> {
             title: const Text('Stock Reports', style: AppTheme.bodyMedium),
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Stock Reports coming soon...'),
-                  backgroundColor: AppTheme.primaryColor,
-                ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const StockReportsScreen()),
               );
             },
           ),
@@ -105,11 +109,9 @@ class _StockKeeperDashboardState extends State<StockKeeperDashboard> {
             title: const Text('Settings', style: AppTheme.bodyMedium),
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Settings coming soon...'),
-                  backgroundColor: AppTheme.primaryColor,
-                ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
             },
           ),
@@ -177,22 +179,38 @@ class _StockKeeperDashboardState extends State<StockKeeperDashboard> {
           children: [
             Image.asset(
               'assets/logo_round.png',
-              height: 32,
-              width: 32,
+              height: 28,
+              width: 28,
               fit: BoxFit.contain,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             const Text(
-              'STOCK KEEPER DASHBOARD',
+              'STOCK KEEPER',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return IconButton(
+                icon: Icon(
+                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  themeProvider.toggleTheme();
+                },
+                tooltip: 'Toggle Dark Mode',
+              );
+            },
+          ),
+        ],
       ),
       drawer: _buildDrawer(user),
       body: SingleChildScrollView(
@@ -261,7 +279,7 @@ class _StockKeeperDashboardState extends State<StockKeeperDashboard> {
                           '10',
                           Icons.local_shipping,
                         ),
-                        AppTheme.statItem('Items', '7', Icons.inventory_2),
+                        AppTheme.statItem('Cylinders', '7', Icons.inventory_2),
                         AppTheme.statItem('Regions', '5', Icons.location_on),
                       ],
                     ),
@@ -304,7 +322,7 @@ class _StockKeeperDashboardState extends State<StockKeeperDashboard> {
       {
         'icon': Icons.inventory_2,
         'title': 'Stock Count',
-        'subtitle': 'Count current stock',
+        'subtitle': 'Count gas cylinders',
         'route': '/stock-count',
         'color': AppTheme.successColor,
       },
@@ -317,8 +335,8 @@ class _StockKeeperDashboardState extends State<StockKeeperDashboard> {
       },
       {
         'icon': Icons.add_box,
-        'title': 'Add Items',
-        'subtitle': 'Add new items',
+        'title': 'Add Cylinders',
+        'subtitle': 'Add new gas cylinders',
         'route': '/add-items',
         'color': AppTheme.warningColor,
       },
@@ -445,19 +463,19 @@ class _StockKeeperDashboardState extends State<StockKeeperDashboard> {
 
           _buildActivityItem(
             icon: Icons.local_shipping,
-            title: 'Stock count updated for Vincent Atema',
+            title: 'Gas cylinder count updated for Vincent Atema',
             subtitle: '2 hours ago',
             color: AppTheme.successColor,
           ),
           _buildActivityItem(
             icon: Icons.inventory_2,
-            title: 'New items added to inventory',
+            title: 'New gas cylinders added to inventory',
             subtitle: '4 hours ago',
             color: AppTheme.infoColor,
           ),
           _buildActivityItem(
             icon: Icons.analytics,
-            title: 'Monthly stock report generated',
+            title: 'Monthly cylinder report generated',
             subtitle: '1 day ago',
             color: AppTheme.warningColor,
           ),
@@ -518,6 +536,30 @@ class _StockKeeperDashboardState extends State<StockKeeperDashboard> {
                   salespersonCode: 'SAMPLE 001',
                 ),
           ),
+        );
+        break;
+      case '/stock-reports':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const StockReportsScreen()),
+        );
+        break;
+      case '/add-items':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AddItemsScreen()),
+        );
+        break;
+      case '/stock-transfer':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const StockTransferScreen()),
+        );
+        break;
+      case '/settings':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SettingsScreen()),
         );
         break;
       default:
