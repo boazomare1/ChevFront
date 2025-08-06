@@ -1,6 +1,7 @@
 import 'package:chevenergies/shared%20utils/widgets.dart';
 import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:chevenergies/screens/stock_keeper_dashboard.dart';
+import 'package:chevenergies/services/biometric_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,11 +23,14 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _rememberMe = false;
   bool _isLoadingCredentials = true;
+  bool _isBiometricAvailable = false;
+  bool _isBiometricEnabled = false;
 
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
+    _checkBiometricStatus();
   }
 
   @override
@@ -86,6 +90,8 @@ class _LoginScreenState extends State<LoginScreen> {
       await prefs.remove('saved_email');
       await prefs.remove('saved_password');
       await prefs.setBool('remember_me', false);
+      // Also clear from BiometricService
+      await BiometricService.disableBiometric();
     } catch (e) {
       // Silently handle clear errors
     }
@@ -113,9 +119,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Save credentials if "Remember Me" is checked
       if (_rememberMe) {
+        print('🔐 Saving credentials to SharedPreferences...');
         await _saveCredentials();
+        print('🔐 Saving credentials to BiometricService...');
+        // Also save to BiometricService for fingerprint authentication
+        await BiometricService.enableBiometric(email, pass);
+        setState(() => _isBiometricEnabled = true);
+        print('🔐 Credentials saved successfully!');
       } else {
+        print('🔐 Clearing credentials...');
         await _clearSavedCredentials();
+        // Also clear from BiometricService
+        await BiometricService.disableBiometric();
+        setState(() => _isBiometricEnabled = false);
+        print('🔐 Credentials cleared successfully!');
       }
 
       // Check if widget is still mounted before proceeding
@@ -144,6 +161,99 @@ class _LoginScreenState extends State<LoginScreen> {
         //         message: 'Authentication Failed - check your credentials',
         //       ),
         // );
+      }
+    }
+  }
+
+  Future<void> _checkBiometricStatus() async {
+    final isAvailable = await BiometricService.isBiometricAvailable();
+    final isEnabled = await BiometricService.isBiometricEnabled();
+
+    if (mounted) {
+      setState(() {
+        _isBiometricAvailable = isAvailable;
+        _isBiometricEnabled = isEnabled;
+      });
+    }
+  }
+
+  Future<void> _authenticateWithBiometrics() async {
+    setState(() => _isLoading = true);
+
+    try {
+      print('🔐 Starting biometric authentication...');
+
+      // First authenticate with biometrics
+      final biometricSuccess =
+          await BiometricService.authenticateWithBiometrics();
+
+      print('🔐 Biometric authentication result: $biometricSuccess');
+
+      if (!biometricSuccess) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Get stored credentials
+      final credentials = await BiometricService.getStoredCredentials();
+      print(
+        '🔐 Retrieved credentials: ${credentials != null ? 'Found' : 'Not found'}',
+      );
+
+      if (credentials == null) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No stored credentials found. Please login manually first.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Check if credentials are still valid
+      final areValid = await BiometricService.areCredentialsValid();
+      print('🔐 Credentials validity: $areValid');
+
+      if (!areValid) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Stored credentials have expired. Please login manually.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      print('🔐 Attempting login with stored credentials...');
+
+      // Login with stored credentials
+      await Provider.of<AppState>(
+        context,
+        listen: false,
+      ).login(credentials['email']!, credentials['password']!);
+
+      print('🔐 Login successful!');
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        Navigator.pushReplacementNamed(context, '/');
+      }
+    } catch (e) {
+      print('🔐 Biometric login error: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Biometric login failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -347,6 +457,90 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                       ),
                     ),
+
+                    // Biometric authentication section
+                    if (_isBiometricAvailable) ...[
+                      const SizedBox(height: 20),
+
+                      // Divider with "OR" text
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: AppTheme.textLight)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'OR',
+                              style: AppTheme.bodySmall.copyWith(
+                                color: AppTheme.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: AppTheme.textLight)),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Fingerprint button
+                      if (_isBiometricEnabled) ...[
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed:
+                                _isLoading ? null : _authenticateWithBiometrics,
+                            icon: const Icon(Icons.fingerprint, size: 24),
+                            label: const Text(
+                              'Login with Fingerprint',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.primaryColor,
+                              side: BorderSide(color: AppTheme.primaryColor),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppTheme.primaryColor.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.fingerprint,
+                                color: AppTheme.primaryColor,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Login once to enable fingerprint authentication',
+                                  style: AppTheme.bodyMedium.copyWith(
+                                    color: AppTheme.primaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ],
                 ),
               ),

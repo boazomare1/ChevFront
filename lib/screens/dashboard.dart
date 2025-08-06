@@ -10,6 +10,9 @@ import 'package:chevenergies/screens/stock_screen.dart';
 import 'package:chevenergies/screens/customers.dart';
 import 'package:chevenergies/screens/discount_sales.dart';
 import 'package:chevenergies/screens/cheque_sales.dart';
+import 'package:chevenergies/screens/biometric_settings.dart';
+import 'package:chevenergies/screens/change_password.dart';
+import 'package:chevenergies/screens/update_profile_image.dart';
 
 import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -78,10 +81,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
             title: const Text('Change Password', style: AppTheme.bodyMedium),
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Coming soon...'),
-                  duration: Duration(seconds: 2),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+              );
+            },
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.person, color: AppTheme.textPrimary),
+            title: const Text(
+              'Update Profile Image',
+              style: AppTheme.bodyMedium,
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const UpdateProfileImageScreen(),
+                ),
+              );
+            },
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.fingerprint, color: AppTheme.textPrimary),
+            title: const Text(
+              'Fingerprint Settings',
+              style: AppTheme.bodyMedium,
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const BiometricSettingsScreen(),
                 ),
               );
             },

@@ -1,6 +1,7 @@
 import 'package:chevenergies/models/user.dart';
 import 'package:chevenergies/screens/salespeople.dart';
 import 'package:chevenergies/screens/current_stock.dart';
+import 'package:chevenergies/screens/biometric_settings.dart';
 import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -108,6 +109,23 @@ class _StockKeeperDashboardState extends State<StockKeeperDashboard> {
                 const SnackBar(
                   content: Text('Settings coming soon...'),
                   backgroundColor: AppTheme.primaryColor,
+                ),
+              );
+            },
+          ),
+
+          ListTile(
+            leading: const Icon(Icons.fingerprint, color: AppTheme.textPrimary),
+            title: const Text(
+              'Fingerprint Settings',
+              style: AppTheme.bodyMedium,
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const BiometricSettingsScreen(),
                 ),
               );
             },
