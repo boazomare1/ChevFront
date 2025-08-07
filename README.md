@@ -2,6 +2,10 @@
 
 A comprehensive Flutter application for managing LPG cylinder sales, accessories, and customer relationships. Built for salespeople and stock keepers to efficiently handle their daily operations in the gas distribution business.
 
+**Version 2.08.2025** | **© 2025 Techsavanna Software Technologies. All Rights Reserved.** | **techsavanna.co.ke**
+
+**Version 2.08.2025** | **© 2025 Techsavanna Software Technologies. All Rights Reserved.** | **techsavanna.co.ke**
+
 ## 📱 Features
 
 ### 🔐 Authentication & Security
@@ -13,6 +17,7 @@ A comprehensive Flutter application for managing LPG cylinder sales, accessories
 - **Flexible Login**: "Sign in as different user" option shows email field when needed
 - **Secure Storage**: All credentials stored using Flutter Secure Storage with encryption
 - **Role-based Access**: Different dashboards for salespeople and stock keepers with automatic routing based on user role
+- **Changelog Viewer**: View app updates and changes before or after login
 
 ### 🏠 Dashboard
 - **Main Dashboard**: Overview of routes, today's activities, and total statistics
@@ -64,6 +69,8 @@ A comprehensive Flutter application for managing LPG cylinder sales, accessories
 - **Supplier Management**: Track suppliers and manage relationships
 - **Category Management**: Organize inventory by categories
 - **Dark Mode**: Complete dark theme support with automatic switching
+- **Changelog System**: View app updates and version history
+- **Changelog Viewer**: View app updates and changes before or after login
 
 ## 🚀 Installation
 
@@ -440,6 +447,17 @@ This application is proprietary software developed for Chev Energies. All rights
 
 ## 🔄 Version History
 
+### v2.08.2025 (Latest)
+- **Client-Ready Delivery Package**: Complete package with APK and documentation in multiple formats
+- **Changelog Viewer**: New feature to display app updates and changes
+- **Enhanced Documentation**: User manual and installation guide in text format
+- **Fixed Login Issues**: Resolved release APK login problems with proper permissions
+- **Company Branding**: Added Techsavanna Software Technologies copyright and website
+- **Dynamic Year Display**: Current year automatically displayed in copyright notices
+- **PDF Invoice Updates**: Added company branding to generated invoices
+- **Settings Integration**: Company information displayed in app settings
+
+### Previous Versions
 - **v1.0.0**: Initial release with core features
 - Added fingerprint authentication
 - Enhanced sales management
@@ -447,6 +465,20 @@ This application is proprietary software developed for Chev Energies. All rights
 - Better user experience
 
 ### Recent Updates
+
+**Client Delivery System**:
+- **Multiple File Formats**: Documentation provided in .txt, .md, and .html formats
+- **Easy Accessibility**: Text files can be opened with any text editor
+- **PDF Conversion**: Instructions for converting to PDF using Microsoft Word
+- **Complete Package**: APK, user manual, installation guide, and changelog included
+- **Professional Branding**: Company information and copyright notices throughout
+
+**Changelog Viewer Feature**:
+- **Pre/Post Login Access**: View changes before or after authentication
+- **Scrollable Interface**: Easy navigation through version history
+- **Skip Option**: Users can skip to login if not interested in changes
+- **Version Communication**: Always keep users informed of app updates
+- **Professional Presentation**: Clean, organized display of changes
 
 **Security Improvements**:
 - **Flutter Secure Storage**: Replaced SharedPreferences with encrypted storage for all credentials

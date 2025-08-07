@@ -1,5 +1,6 @@
 import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:chevenergies/services/theme_provider.dart';
+import 'package:chevenergies/screens/changelog_viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -415,6 +416,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SnackBar(
                   content: Text('Privacy Policy coming soon!'),
                   backgroundColor: AppTheme.primaryColor,
+                ),
+              );
+            },
+          ),
+          _buildDivider(),
+          _buildSettingTile(
+            icon: Icons.new_releases,
+            title: 'What\'s New',
+            subtitle: 'View app updates and changes',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ChangelogViewer(
+                    showSkipButton: false,
+                  ),
                 ),
               );
             },
