@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/theme_provider.dart';
+import '../constants/app_version.dart';
 
 class ChangelogViewer extends StatelessWidget {
   final VoidCallback? onSkipToLogin;
@@ -41,19 +42,7 @@ class ChangelogViewer extends StatelessWidget {
               children: [
                 _buildHeader(context, themeProvider),
                 const SizedBox(height: 24),
-                _buildVersionSection(context, 'v2.08.2025', 'August 7, 2025', [
-                  '🚀 Client-Ready Delivery Package with multiple file formats',
-                  '📱 New Changelog Viewer feature',
-                  '📄 Enhanced documentation in text format',
-                  '🔧 Fixed release APK login issues',
-                  '🏢 Added Techsavanna Software Technologies branding',
-                  '📅 Dynamic year display in copyright notices',
-                  '📋 Updated PDF invoices with company information',
-                  '⚙️ Enhanced app settings with company details',
-                  '👥 Fixed customers screen to show today\'s customers with correct day format',
-                  '📸 Added camera capture functionality for shop images',
-                  '🎫 Redesigned Ticket Sales screen with modern UI and filtering',
-                ], themeProvider),
+                _buildVersionSection(context, 'v${AppVersion.displayVersion}', AppVersion.releaseDate, AppVersion.releaseNotes, themeProvider),
                 const SizedBox(height: 20),
                 _buildVersionSection(context, 'v2.07.2025', 'August 6, 2025', [
                   '🔐 Enhanced fingerprint authentication',

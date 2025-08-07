@@ -421,21 +421,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           _buildDivider(),
-          _buildSettingTile(
-            icon: Icons.new_releases,
-            title: 'What\'s New',
-            subtitle: 'View app updates and changes',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ChangelogViewer(
-                    showSkipButton: false,
-                  ),
-                ),
-              );
-            },
-          ),
+          
           _buildDivider(),
           _buildSettingTile(
             icon: Icons.help_outline,

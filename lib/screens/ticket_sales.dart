@@ -74,7 +74,7 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
     try {
       final state = Provider.of<AppState>(context, listen: false);
       final user = state.user;
-      
+
       if (user == null || user.routes.isEmpty) {
         // Fallback to hardcoded data if no user/routes
         _loadHardcodedTickets();
@@ -222,24 +222,39 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
   }
 
   void _updateStatusCounts() {
-    _pendingCount = _tickets.where((ticket) => ticket['status'] == 'Pending').length;
-    _approvedCount = _tickets.where((ticket) => ticket['status'] == 'Approved').length;
-    _rejectedCount = _tickets.where((ticket) => ticket['status'] == 'Rejected').length;
+    _pendingCount =
+        _tickets.where((ticket) => ticket['status'] == 'Pending').length;
+    _approvedCount =
+        _tickets.where((ticket) => ticket['status'] == 'Approved').length;
+    _rejectedCount =
+        _tickets.where((ticket) => ticket['status'] == 'Rejected').length;
   }
 
   void _filterTickets() {
     setState(() {
-      _filteredTickets = _tickets.where((ticket) {
-        final matchesSearch = ticket['id'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            ticket['stopName'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            ticket['notes'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            ticket['routeId'].toLowerCase().contains(_searchQuery.toLowerCase());
+      _filteredTickets =
+          _tickets.where((ticket) {
+            final matchesSearch =
+                ticket['id'].toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ||
+                ticket['stopName'].toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ||
+                ticket['notes'].toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ||
+                ticket['routeId'].toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                );
 
-        final matchesStatus = _statusFilter == null || ticket['status'] == _statusFilter;
-        final matchesReason = _reasonFilter == null || ticket['reason'] == _reasonFilter;
+            final matchesStatus =
+                _statusFilter == null || ticket['status'] == _statusFilter;
+            final matchesReason =
+                _reasonFilter == null || ticket['reason'] == _reasonFilter;
 
-        return matchesSearch && matchesStatus && matchesReason;
-      }).toList();
+            return matchesSearch && matchesStatus && matchesReason;
+          }).toList();
     });
   }
 
@@ -315,19 +330,20 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MakeSaleScreen(
-          shopName: ticket['stopName'],
-          routeId: ticket['routeId'],
-          stopId: ticket['stopId'],
-          day: _getDayFromDate(DateTime.now()),
-          stopLat: stopLat,
-          stopLng: stopLng,
-          logoUrl: '', // Will be handled by make sale screen
-          onComplete: () {
-            // Refresh the ticket list after resale
-            _loadTickets();
-          },
-        ),
+        builder:
+            (context) => MakeSaleScreen(
+              shopName: ticket['stopName'],
+              routeId: ticket['routeId'],
+              stopId: ticket['stopId'],
+              day: _getDayFromDate(DateTime.now()),
+              stopLat: stopLat,
+              stopLng: stopLng,
+              logoUrl: '', // Will be handled by make sale screen
+              onComplete: () {
+                // Refresh the ticket list after resale
+                _loadTickets();
+              },
+            ),
       ),
     );
   }
@@ -357,15 +373,27 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
             child: Row(
               children: [
                 Expanded(
-                  child: _buildStatusCard('Pending', _pendingCount, Colors.orange),
+                  child: _buildStatusCard(
+                    'Pending',
+                    _pendingCount,
+                    Colors.orange,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildStatusCard('Approved', _approvedCount, Colors.green),
+                  child: _buildStatusCard(
+                    'Approved',
+                    _approvedCount,
+                    Colors.green,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildStatusCard('Rejected', _rejectedCount, Colors.red),
+                  child: _buildStatusCard(
+                    'Rejected',
+                    _rejectedCount,
+                    Colors.red,
+                  ),
                 ),
               ],
             ),
@@ -377,7 +405,10 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
             child: GestureDetector(
               onTap: _selectDate,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 16,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -385,7 +416,11 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today, color: AppTheme.primaryColor, size: 20),
+                    Icon(
+                      Icons.calendar_today,
+                      color: AppTheme.primaryColor,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -560,58 +595,59 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
 
           // Tickets List
           Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppTheme.primaryColor,
-                    ),
-                  )
-                : _filteredTickets.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.support_agent,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _searchQuery.isNotEmpty ||
-                                      _statusFilter != null ||
-                                      _reasonFilter != null
-                                  ? 'No tickets found'
-                                  : 'No tickets available',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _searchQuery.isNotEmpty ||
-                                      _statusFilter != null ||
-                                      _reasonFilter != null
-                                  ? 'Try adjusting your search or filters'
-                                  : 'Tickets will appear here when raised',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _filteredTickets.length,
-                        itemBuilder: (context, index) {
-                          final ticket = _filteredTickets[index];
-                          return _buildTicketCard(ticket);
-                        },
+            child:
+                _isLoading
+                    ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primaryColor,
                       ),
+                    )
+                    : _filteredTickets.isEmpty
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.support_agent,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchQuery.isNotEmpty ||
+                                    _statusFilter != null ||
+                                    _reasonFilter != null
+                                ? 'No tickets found'
+                                : 'No tickets available',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _searchQuery.isNotEmpty ||
+                                    _statusFilter != null ||
+                                    _reasonFilter != null
+                                ? 'Try adjusting your search or filters'
+                                : 'Tickets will appear here when raised',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _filteredTickets.length,
+                      itemBuilder: (context, index) {
+                        final ticket = _filteredTickets[index];
+                        return _buildTicketCard(ticket);
+                      },
+                    ),
           ),
         ],
       ),
@@ -634,11 +670,7 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
       ),
       child: Column(
         children: [
-          Icon(
-            _getStatusIcon(status),
-            color: color,
-            size: 24,
-          ),
+          Icon(_getStatusIcon(status), color: color, size: 24),
           const SizedBox(height: 8),
           Text(
             count.toString(),
@@ -663,7 +695,7 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
 
   Widget _buildTicketCard(Map<String, dynamic> ticket) {
     final isRejected = ticket['status'] == 'Rejected';
-    
+
     return GestureDetector(
       onTap: isRejected ? () => _makeResaleFromTicket(ticket) : null,
       child: Container(
@@ -678,7 +710,10 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
               offset: const Offset(0, 2),
             ),
           ],
-          border: isRejected ? Border.all(color: Colors.red.withOpacity(0.3), width: 2) : null,
+          border:
+              isRejected
+                  ? Border.all(color: Colors.red.withOpacity(0.3), width: 2)
+                  : null,
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -717,7 +752,10 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
                         ),
                         Text(
                           ticket['stopName'],
-                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -733,7 +771,9 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
                       color: _getStatusColor(ticket['status']).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: _getStatusColor(ticket['status']).withOpacity(0.3),
+                        color: _getStatusColor(
+                          ticket['status'],
+                        ).withOpacity(0.3),
                       ),
                     ),
                     child: Text(
@@ -762,7 +802,10 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
 
               // Reason
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
