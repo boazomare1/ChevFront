@@ -87,10 +87,15 @@ class _CustomersScreenState extends State<CustomersScreen>
         desiredAccuracy: LocationAccuracy.best,
       );
 
+      // Determine today's route based on current weekday
+      final today = DateTime.now().weekday == DateTime.monday ? 'monday' : 'tuesday';
+      
       final routes = await Provider.of<AppState>(
         context,
         listen: false,
-      ).getRoutes(widget.day ?? 'monday'); // Default to monday if no day specified
+      ).getRoutes(
+        widget.day ?? today, // Use today's route if no specific day provided
+      );
 
       _stops = [];
       _stopToRouteMap.clear();
@@ -270,7 +275,10 @@ class _CustomersScreenState extends State<CustomersScreen>
               ? AppTheme.emptyState(
                 icon: Icons.people_outline,
                 title: 'No Customers Available',
-                subtitle: widget.day != null ? 'No customers to serve for ${widget.day}' : 'No customers available',
+                subtitle:
+                    widget.day != null
+                        ? 'No customers to serve for ${widget.day}'
+                        : 'No customers to serve today',
               )
               : Column(
                 children: [
@@ -315,7 +323,7 @@ class _CustomersScreenState extends State<CustomersScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${(widget.day ?? 'ALL').toUpperCase()} ROUTE',
+                                    '${(widget.day ?? 'TODAY').toUpperCase()} ROUTE',
                                     style: AppTheme.headingLarge.copyWith(
                                       color: Colors.white,
                                       fontSize: 20,

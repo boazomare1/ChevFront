@@ -50,7 +50,7 @@ class ChangelogViewer extends StatelessWidget {
                   '📅 Dynamic year display in copyright notices',
                   '📋 Updated PDF invoices with company information',
                   '⚙️ Enhanced app settings with company details',
-                  '👥 Fixed customers screen to show all customers from dashboard',
+                  '👥 Fixed customers screen to show today\'s customers from dashboard',
                   '📸 Added camera capture functionality for shop images',
                 ], themeProvider),
                 const SizedBox(height: 20),

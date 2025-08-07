@@ -461,7 +461,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case '/customers':
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const CustomersScreen()), // Show all customers
+          MaterialPageRoute(
+            builder: (_) => const CustomersScreen(),
+          ), // Show all customers
         );
         break;
       case '/sales-history':
