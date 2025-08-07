@@ -1,12 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'secure_storage_service.dart';
 
 class BiometricService {
   static final LocalAuthentication _localAuth = LocalAuthentication();
-  static const String _biometricEnabledKey = 'biometric_enabled';
-  static const String _userCredentialsKey = 'user_credentials';
 
   // Check if biometric authentication is available
   static Future<bool> isBiometricAvailable() async {
@@ -54,76 +51,31 @@ class BiometricService {
 
   // Enable biometric authentication
   static Future<void> enableBiometric(String email, String password) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_biometricEnabledKey, true);
-
-    // Store credentials securely (in production, use proper encryption)
-    final credentials = {
-      'email': email,
-      'password': password,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-    };
-    await prefs.setString(_userCredentialsKey, jsonEncode(credentials));
+    await SecureStorageService.saveBiometricCredentials(email, password);
   }
 
   // Disable biometric authentication
   static Future<void> disableBiometric() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_biometricEnabledKey, false);
-    await prefs.remove(_userCredentialsKey);
+    await SecureStorageService.disableBiometric();
   }
 
   // Check if biometric is enabled
   static Future<bool> isBiometricEnabled() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_biometricEnabledKey) ?? false;
+    return await SecureStorageService.isBiometricEnabled();
   }
 
   // Get stored credentials
   static Future<Map<String, String>?> getStoredCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    final credentialsJson = prefs.getString(_userCredentialsKey);
-
-    if (credentialsJson != null) {
-      try {
-        final credentials = jsonDecode(credentialsJson) as Map<String, dynamic>;
-        return {
-          'email': credentials['email'] as String,
-          'password': credentials['password'] as String,
-        };
-      } catch (e) {
-        print('Failed to parse stored credentials: $e');
-        return null;
-      }
-    }
-    return null;
+    return await SecureStorageService.getBiometricCredentials();
   }
 
   // Check if stored credentials are still valid (not too old)
   static Future<bool> areCredentialsValid() async {
-    final prefs = await SharedPreferences.getInstance();
-    final credentialsJson = prefs.getString(_userCredentialsKey);
-
-    if (credentialsJson != null) {
-      try {
-        final credentials = jsonDecode(credentialsJson) as Map<String, dynamic>;
-        final timestamp = credentials['timestamp'] as int;
-        final storedDate = DateTime.fromMillisecondsSinceEpoch(timestamp);
-        final now = DateTime.now();
-
-        // Consider credentials valid for 30 days
-        return now.difference(storedDate).inDays < 30;
-      } catch (e) {
-        print('Failed to check credentials validity: $e');
-        return false;
-      }
-    }
-    return false;
+    return await SecureStorageService.areBiometricCredentialsValid();
   }
 
   // Clear stored credentials
   static Future<void> clearStoredCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userCredentialsKey);
+    await SecureStorageService.disableBiometric();
   }
 }

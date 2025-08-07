@@ -7,8 +7,12 @@ A comprehensive Flutter application for managing LPG cylinder sales, accessories
 ### 🔐 Authentication & Security
 - **Email/Password Login**: Traditional authentication method
 - **Fingerprint Authentication**: Quick and secure biometric login
-- **Remember Me**: Option to save credentials for faster access
-- **Role-based Access**: Different dashboards for salespeople and stock keepers
+- **Remember Me**: Option to save credentials for faster access (securely encrypted)
+- **Personalized Login**: Dynamic greetings with user avatar and full name display
+- **Streamlined UX**: Password-only login for returning users with saved credentials
+- **Flexible Login**: "Sign in as different user" option shows email field when needed
+- **Secure Storage**: All credentials stored using Flutter Secure Storage with encryption
+- **Role-based Access**: Different dashboards for salespeople and stock keepers with automatic routing based on user role
 
 ### 🏠 Dashboard
 - **Main Dashboard**: Overview of routes, today's activities, and total statistics
@@ -35,6 +39,9 @@ A comprehensive Flutter application for managing LPG cylinder sales, accessories
 
 ### 👥 Customer Management
 - **Customer Database**: Manage customer information
+- **Customer Logos**: Display actual customer logos from API
+- **Logo Preview**: Tap logos for larger preview with shop details
+- **Shop Identification**: Enhanced preview helps locate shops on the ground
 - **Add Customers**: Register new customers
 - **Customer Routes**: Organize customers by routes
 - **Customer Search**: Quick customer lookup
@@ -112,10 +119,25 @@ flutter build appbundle --release
    - Check "Remember Me" to enable fingerprint authentication
    - Tap "SIGN IN"
 
-2. **Fingerprint Login** (after setup):
+2. **Returning Users** (with "Remember Me" enabled):
+   - See personalized greeting with your initials and time of day
+   - Enter only your password (email is hidden)
+   - Tap "CONTINUE" or use fingerprint authentication
+   - Option to "Sign in as different user" available
+
+3. **Fingerprint Login** (after setup):
    - Tap "Login with Fingerprint" on the login screen
    - Use your device's fingerprint sensor
    - Access biometric settings from dashboard drawer
+
+4. **Personalized Experience**:
+   - **Morning (4 AM - 12 PM)**: "Good Morning"
+   - **Afternoon (12 PM - 5 PM)**: "Good Afternoon"
+   - **Evening (5 PM - 9 PM)**: "Good Evening"
+   - **Night (9 PM - 4 AM)**: "Good Night"
+   - **Weekends**: "Good Weekend"
+   - **User Avatar**: Displays user initials in a circle
+   - **Full Name**: Shows actual user name from API (e.g., "Samson Safari")
 
 ### 🏠 Dashboard Navigation
 
@@ -225,6 +247,12 @@ flutter build appbundle --release
 3. Check purchase history
 4. Update customer data
 
+**Logo Preview**:
+1. Customer list → Tap on customer logo (small eye icon indicates tappable logos)
+2. View larger logo preview with shop information
+3. Use logo to identify shop on the ground
+4. Tap outside or close button to dismiss preview
+
 ### 📊 Financial Management
 
 **Record Expenditure**:
@@ -322,9 +350,8 @@ flutter build appbundle --release
 ### Architecture
 - **Framework**: Flutter 3.7.2+
 - **State Management**: Provider pattern
-- **Local Storage**: SharedPreferences
+- **Local Storage**: Flutter Secure Storage (encrypted)
 - **Biometric Auth**: local_auth package
-
 - **HTTP Client**: http package
 - **File Operations**: path_provider, share_plus
 
@@ -334,16 +361,21 @@ dependencies:
   flutter: sdk: flutter
   provider: ^6.1.2
   local_auth: ^2.1.8
-  shared_preferences: ^2.2.2
+  flutter_secure_storage: ^9.0.0
   http: ^1.2.2
   geolocator: ^9.0.2
   image_picker: ^0.8.4+3
-
   pdf: ^3.10.4
   printing: ^5.12.0
   excel: ^4.0.6
   share_plus: ^10.0.3
 ```
+
+### Customer Logo API
+- **Endpoint**: `{{baseURL}}/api/method/route_plan.apis.manage.view_image`
+- **Method**: POST
+- **Payload**: `{"file_url": "/private/files/logo.png"}`
+- **Response**: Image bytes (PNG, JPG, etc.)
 
 ### File Structure
 ```
@@ -415,6 +447,69 @@ This application is proprietary software developed for Chev Energies. All rights
 - Better user experience
 
 ### Recent Updates
+
+**Security Improvements**:
+- **Flutter Secure Storage**: Replaced SharedPreferences with encrypted storage for all credentials
+- **Encrypted Credentials**: All passwords and sensitive data now stored with AES encryption
+- **Enhanced Biometric Security**: Improved fingerprint authentication with secure credential storage
+- **Platform-specific Security**: Android uses EncryptedSharedPreferences, iOS uses Keychain
+- **Automatic Encryption**: All stored data automatically encrypted/decrypted transparently
+
+**Personalized Login Experience**:
+- **Dynamic Greetings**: Time-based greetings (Good Morning/Afternoon/Evening/Night/Weekend)
+- **User Avatar**: Displays user initials in a styled circle below greeting
+- **Full Name Display**: Shows actual user name from API (e.g., "Samson Safari")
+- **Streamlined UX**: Password-only login for returning users with saved credentials
+- **Smart Interface**: Hides email field and "Remember Me" checkbox for returning users
+- **Easy Switching**: "Sign in as different user" option for multi-user scenarios
+- **Enhanced Fingerprint Usage**: Simplified login encourages biometric authentication
+
+**Customer Logo Integration**:
+- **Dynamic Logos**: Display actual customer logos from API instead of static images
+- **Image Caching**: Efficient caching system for faster logo loading
+- **Loading States**: Smooth loading indicators while logos are being fetched
+- **Error Handling**: Graceful fallback to placeholder images if logos fail to load
+- **Consistent Display**: Customer logos shown in both customer list and sale screens
+- **Logo Preview**: Tap on logos to view larger preview with shop information
+- **Shop Identification**: Enhanced preview dialog helps salespeople identify shops on the ground
+- **Visual Indicators**: Small eye icon shows which logos are tappable for preview
+
+**Enhanced Make Sale Experience**:
+- **Smart Product Management**: Prevents duplicate items by asking to adjust quantity instead
+- **Current Items Preview**: Shows existing sale items in the add product dialog
+- **Product Search**: Quick search functionality to find products easily
+- **One-Click Removal**: Remove items from sale with visual feedback
+- **Responsive Design**: Dialog adapts to different screen sizes
+- **Visual Feedback**: SnackBar notifications for all actions (add, update, remove)
+- **Streamlined Workflow**: Better UX for adding multiple products efficiently
+
+**Enhanced Payment Processing**:
+- **Complete API Integration**: Updated payment API to match backend requirements
+- **Cheque Payment Support**: Added required fields for cheque payments only (transcode, reference_date, evidence_photo)
+- **Image Evidence**: Capture and convert cheque images to base64 for API compatibility
+- **Date Picker**: Easy reference date selection with calendar interface for cheque payments
+- **Transaction Codes**: Support for cheque numbers in transcode field
+- **Payment Mode Flexibility**: Cash, Mpesa, and Invoice payments work with original implementation
+- **Smart Field Display**: Additional fields only appear when Cheque payment mode is selected
+- **Error Handling**: Improved error messages for payment failures
+
+**Resale Feature**:
+- **Today's Sales Only**: Make Sale button only appears for sales made today
+- **Direct Navigation**: Uses stop_id to navigate directly to make sale screen
+- **Dynamic Coordinates**: Uses coordinates from stop_info when available, defaults to Nairobi coordinates
+- **Bypass Customer Queue**: Allows serving customers who were already served today
+- **Smart Button Display**: Shows "Make Sale" button only for today's sales
+- **Visual Distinction**: Make Sale button uses blue color with shopping cart icon
+- **Other Dates**: Only show PDF preview and Pay/Complete buttons for historical sales
+- **Error Handling**: Graceful handling when stop information is unavailable
+
+**Stock Keeper API Integration**:
+- **Dynamic Vehicle Listing**: Fetches vehicles and salespeople from backend API
+- **Dynamic Stock Items**: Loads stock items for specific vehicles from API
+- **Inventory Reconciliation**: Submits physical counts with variance calculations
+- **Real-time Validation**: Validates all quantities before submission
+- **Error Handling**: Comprehensive error handling for API failures
+- **Success Feedback**: Clear success/failure messages for all operations
 
 **Dark Mode Implementation**:
 - **Theme Provider**: Complete theme management system with persistent storage

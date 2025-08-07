@@ -1,13 +1,33 @@
 import 'package:chevenergies/shared utils/app_theme.dart';
+import 'package:chevenergies/services/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 class StockItem {
   final String id;
   final String name;
+  final int systemQuantity;
+  final String unit;
   int quantity;
 
-  StockItem({required this.id, required this.name, this.quantity = 0});
+  StockItem({
+    required this.id,
+    required this.name,
+    this.quantity = 0,
+    this.systemQuantity = 0,
+    this.unit = 'Nos',
+  });
+
+  factory StockItem.fromJson(Map<String, dynamic> json) {
+    return StockItem(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      systemQuantity: json['system_quantity'] ?? 0,
+      unit: json['unit'] ?? 'Nos',
+      quantity: 0, // Physical quantity starts at 0
+    );
+  }
 }
 
 class CurrentStockScreen extends StatefulWidget {
@@ -40,23 +60,27 @@ class _CurrentStockScreenState extends State<CurrentStockScreen> {
       _isLoading = true;
     });
 
-    // Simulate API call delay
-    await Future.delayed(const Duration(milliseconds: 600));
+    try {
+      final appState = Provider.of<AppState>(context, listen: false);
+      final itemsData = await appState.getVehicleItems(widget.salespersonCode);
 
-    // Mock data - in real app this would come from API
-    _stockItems = [
-      StockItem(id: '4103', name: 'POWER REFIL 13KG'),
-      StockItem(id: '4104', name: 'lantern'),
-      StockItem(id: '4105', name: 'GLASS TOP 2 BURNER'),
-      StockItem(id: '4106', name: 'mantle'),
-      StockItem(id: '4107', name: '#A1 burners'),
-      StockItem(id: '4108', name: 'black grill'),
-      StockItem(id: '4109', name: 'high pressure regulator'),
-    ];
+      _stockItems = itemsData.map((json) => StockItem.fromJson(json)).toList();
 
-    setState(() {
-      _isLoading = false;
-    });
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load stock items: ${e.toString()}'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    }
   }
 
   void _updateQuantity(int index, String value) {
@@ -88,27 +112,68 @@ class _CurrentStockScreenState extends State<CurrentStockScreen> {
       _isLoading = true;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final appState = Provider.of<AppState>(context, listen: false);
 
-    setState(() {
-      _isLoading = false;
-      _hasChanges = false;
-    });
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Stock updated successfully for ${widget.salespersonName}',
+      // Prepare payload
+      final payload = {
+        "route_id": widget.salespersonCode,
+        "salesperson_name": widget.salespersonName,
+        "count_date": DateTime.now().toIso8601String().split('T')[0],
+        "counted_by": appState.user?.email ?? "stock_keeper",
+        "items":
+            _stockItems
+                .map(
+                  (item) => {
+                    "item_id": item.id,
+                    "item_name": item.name,
+                    "system_quantity": item.systemQuantity,
+                    "physical_quantity": item.quantity,
+                    "variance": item.quantity - item.systemQuantity,
+                  },
+                )
+                .toList(),
+        "total_items_counted": _stockItems.length,
+        "total_variance": _stockItems.fold(
+          0,
+          (sum, item) => sum + (item.quantity - item.systemQuantity),
         ),
-        backgroundColor: AppTheme.successColor,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      };
 
-    // Navigate back after success
-    Navigator.of(context).pop();
+      // Submit to API
+      final response = await appState.submitStockCount(payload);
+
+      setState(() {
+        _isLoading = false;
+        _hasChanges = false;
+      });
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Stock count submitted successfully for ${widget.salespersonName}',
+          ),
+          backgroundColor: AppTheme.successColor,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Navigate back after success
+      Navigator.of(context).pop();
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit stock count: ${e.toString()}'),
+          backgroundColor: AppTheme.errorColor,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override

@@ -319,19 +319,22 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => _makeSaleFromHistory(invoice),
-                          icon: const Icon(Icons.add_shopping_cart, size: 18),
-                          label: const Text('Make Sale'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                      // Only show Make Sale button for today's sales
+                      if (_isTodaySale(invoice)) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _makeResaleFromHistory(invoice),
+                            icon: const Icon(Icons.add_shopping_cart, size: 18),
+                            label: const Text('Make Sale'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                       const SizedBox(width: 8),
                       if (invoice.status == 'Unpaid' ||
                           invoice.status == 'Partly Paid' ||
@@ -492,6 +495,54 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
               ),
             ],
           ),
+    );
+  }
+
+  bool _isTodaySale(Invoice invoice) {
+    final today = DateTime.now();
+    final invoiceDate = DateTime.tryParse(invoice.postingDate);
+    if (invoiceDate == null) return false;
+
+    return invoiceDate.year == today.year &&
+        invoiceDate.month == today.month &&
+        invoiceDate.day == today.day;
+  }
+
+  void _makeResaleFromHistory(Invoice invoice) {
+    if (invoice.stopInfo == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Stop information not available for resale'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Use coordinates from stop_info or default to provided values
+    final defaultLat = -1.263049;
+    final defaultLng = 36.803552;
+
+    final stopLat = invoice.stopInfo!.latitude ?? defaultLat;
+    final stopLng = invoice.stopInfo!.longitude ?? defaultLng;
+
+    // Navigate directly to make sale screen with stop info
+    Navigator.pushNamed(
+      context,
+      '/make-sale',
+      arguments: {
+        'shopName': invoice.shop,
+        'routeId': invoice.routeId,
+        'stopId': invoice.stopInfo!.stopId,
+        'day': _getDayFromDate(DateTime.now()),
+        'stopLat': stopLat,
+        'stopLng': stopLng,
+        'logoUrl': '', // Will be handled by make sale screen
+        'onComplete': () {
+          // Refresh the invoice list after resale
+          _loadInvoices();
+        },
+      },
     );
   }
 

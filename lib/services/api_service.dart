@@ -215,17 +215,35 @@ class ApiService {
   Future<void> createPayment(
     String invoiceId,
     double amount,
-    String mode,
-  ) async {
-    final requestBody = {
+    String mode, {
+    String? transcode,
+    String? referenceDate,
+    String? evidencePhoto,
+  }) async {
+    final requestBody = <String, dynamic>{
       'invoice_id': invoiceId,
       'payment_amount': amount.toString(),
       'payment_mode': mode,
     };
 
+    // Add optional fields based on payment mode
+    if (transcode != null && transcode.isNotEmpty) {
+      requestBody['transcode'] = transcode;
+    }
+
+    if (referenceDate != null && referenceDate.isNotEmpty) {
+      requestBody['reference_date'] = referenceDate;
+    }
+
+    if (evidencePhoto != null && evidencePhoto.isNotEmpty) {
+      requestBody['evidence_photo'] = evidencePhoto;
+    }
+
     print('=== PAYMENT API REQUEST ===');
     print('URL: $baseUrl/route_plan.apis.sales.create_payment_entry');
     print('Request Body: ${jsonEncode(requestBody)}');
+    print('Transcode in request: ${requestBody['transcode']}');
+    print('Payment mode: ${requestBody['payment_mode']}');
 
     final response = await http.post(
       Uri.parse('$baseUrl/route_plan.apis.sales.create_payment_entry'),
@@ -589,7 +607,7 @@ class ApiService {
     required String date,
   }) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/route_plan.apis.sales.today_summary'),
+      Uri.parse('$baseUrl/route_plan.apis.sales.get_today_summary'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -610,6 +628,62 @@ class ApiService {
       throw Exception(
         'Failed to fetch today summary: HTTP ${response.statusCode}',
       );
+    }
+  }
+
+  // Stock Management APIs
+  Future<List<Map<String, dynamic>>> listVehicles() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/route_plan.apis.stock.list_vehicles'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return (data['data'] as List).cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to fetch vehicles: ${response.body}');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getVehicleItems(String routeId) async {
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/route_plan.apis.stock.get_vehicle_items?route_id=$routeId',
+      ),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return (data['data'] as List).cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to fetch vehicle items: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> submitStockCount(
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/route_plan.apis.stock.submit_count'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(payload),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to submit stock count: ${response.body}');
     }
   }
 }

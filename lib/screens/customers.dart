@@ -4,6 +4,7 @@ import 'package:chevenergies/screens/make_sale.dart';
 import 'package:chevenergies/shared utils/extension.dart';
 import 'package:chevenergies/shared%20utils/widgets.dart';
 import 'package:chevenergies/shared utils/app_theme.dart';
+import 'package:chevenergies/widgets/customer_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
@@ -183,6 +184,7 @@ class _CustomersScreenState extends State<CustomersScreen>
               day: widget.day,
               stopLat: stop.latitude,
               stopLng: stop.longitude,
+              logoUrl: stop.logo,
               onComplete: () {
                 setState(() {
                   _servedStopIds.add(stop.name);
@@ -430,7 +432,6 @@ class _CustomersScreenState extends State<CustomersScreen>
     int index,
     bool isFirstUnserved,
   ) {
-    const placeholderAsset = 'assets/gas-cylinder.png';
     String distanceLabel = '—';
 
     if (_currentPosition != null) {
@@ -484,14 +485,14 @@ class _CustomersScreenState extends State<CustomersScreen>
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Gas cylinder image
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(placeholderAsset, fit: BoxFit.cover),
-                      ),
+                    // Customer logo
+                    CustomerLogo(
+                      logoUrl: stop.logo,
+                      width: 60,
+                      height: 60,
+                      placeholderAsset: 'assets/gas-cylinder.png',
+                      shopName: stop.shop,
+                      shopLocation: '${stop.townName}, ${stop.countyName}',
                     ),
                   ],
                 ),

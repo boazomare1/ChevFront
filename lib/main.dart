@@ -12,6 +12,7 @@ import 'package:chevenergies/screens/stock_keeper_dashboard.dart';
 import 'package:chevenergies/screens/biometric_settings.dart';
 import 'package:chevenergies/screens/change_password.dart';
 import 'package:chevenergies/screens/update_profile_image.dart';
+import 'package:chevenergies/screens/make_sale.dart';
 
 import 'package:chevenergies/services/app_state.dart';
 import 'package:chevenergies/services/theme_provider.dart';
@@ -100,6 +101,21 @@ class MyApp extends StatelessWidget {
             '/change-password': (context) => const ChangePasswordScreen(),
             '/update-profile-image':
                 (context) => const UpdateProfileImageScreen(),
+            '/make-sale': (context) {
+              final args =
+                  ModalRoute.of(context)!.settings.arguments
+                      as Map<String, dynamic>;
+              return MakeSaleScreen(
+                shopName: args['shopName'],
+                routeId: args['routeId'],
+                stopId: args['stopId'],
+                day: args['day'],
+                stopLat: args['stopLat'],
+                stopLng: args['stopLng'],
+                logoUrl: args['logoUrl'],
+                onComplete: args['onComplete'],
+              );
+            },
 
             '/login': (context) => const LoginScreen(),
           },

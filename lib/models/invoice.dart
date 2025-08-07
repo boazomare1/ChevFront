@@ -53,6 +53,32 @@ class PaymentMethod {
   }
 }
 
+class StopInfo {
+  final String stopId;
+  final String routeId;
+  final String servedDate;
+  final double? latitude;
+  final double? longitude;
+
+  StopInfo({
+    required this.stopId,
+    required this.routeId,
+    required this.servedDate,
+    this.latitude,
+    this.longitude,
+  });
+
+  factory StopInfo.fromJson(Map<String, dynamic> json) {
+    return StopInfo(
+      stopId: json['stop_id'] ?? '',
+      routeId: json['route_id'] ?? '',
+      servedDate: json['served_date'] ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+    );
+  }
+}
+
 class Invoice {
   final String invoiceId;
   final Customer customer;
@@ -66,6 +92,7 @@ class Invoice {
   final String postingDate;
   final List<InvoiceItem> items;
   final List<PaymentMethod> paymentMethods;
+  final StopInfo? stopInfo;
   String? selectedPaymentMethod;
 
   Invoice({
@@ -81,6 +108,7 @@ class Invoice {
     required this.postingDate,
     required this.items,
     required this.paymentMethods,
+    this.stopInfo,
     this.selectedPaymentMethod,
   });
 
@@ -110,6 +138,10 @@ class Invoice {
               ?.map((method) => PaymentMethod.fromJson(method))
               .toList() ??
           [],
+      stopInfo:
+          json['stop_info'] != null
+              ? StopInfo.fromJson(json['stop_info'])
+              : null,
       selectedPaymentMethod: json['selected_payment_method'] ?? '',
     );
   }

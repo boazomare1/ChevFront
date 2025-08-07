@@ -1,6 +1,8 @@
 import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:chevenergies/screens/current_stock.dart';
+import 'package:chevenergies/services/app_state.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class Salesperson {
   final String name;
@@ -16,6 +18,16 @@ class Salesperson {
     required this.region,
     required this.vehicle,
   });
+
+  factory Salesperson.fromJson(Map<String, dynamic> json) {
+    return Salesperson(
+      name: json['name'] ?? '',
+      code: json['code'] ?? '',
+      phone: json['phone'] ?? '',
+      region: json['region'] ?? '',
+      vehicle: json['vehicle'] ?? '',
+    );
+  }
 }
 
 class SalespeopleScreen extends StatefulWidget {
@@ -49,88 +61,30 @@ class _SalespeopleScreenState extends State<SalespeopleScreen> {
       _isLoading = true;
     });
 
-    // Simulate API call delay
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      final appState = Provider.of<AppState>(context, listen: false);
+      final vehiclesData = await appState.listVehicles();
 
-    // Mock data - in real app this would come from API
-    _allSalespeople = [
-      Salesperson(
-        name: 'VINCENT ATEMA',
-        code: 'KDS 082M',
-        phone: '+254 712 345 678',
-        region: 'Nairobi Central',
-        vehicle: 'KCA 123A',
-      ),
-      Salesperson(
-        name: 'JOHN SIMIYU',
-        code: 'KDA 159Z',
-        phone: '+254 723 456 789',
-        region: 'Mombasa Coast',
-        vehicle: 'KCB 456B',
-      ),
-      Salesperson(
-        name: 'AMOS WAKHUNGU',
-        code: 'KCW 415L',
-        phone: '+254 734 567 890',
-        region: 'Kisumu West',
-        vehicle: 'KCC 789C',
-      ),
-      Salesperson(
-        name: 'EMMANUEL CHIMAKILE',
-        code: 'KCH 978N',
-        phone: '+254 745 678 901',
-        region: 'Nakuru Highlands',
-        vehicle: 'KCD 012D',
-      ),
-      Salesperson(
-        name: 'SAMUEL KUBWA',
-        code: 'KCW 865E',
-        phone: '+254 756 789 012',
-        region: 'Eldoret North',
-        vehicle: 'KCE 345E',
-      ),
-      Salesperson(
-        name: 'BEDAN MWANIKI',
-        code: 'KDA 874J',
-        phone: '+254 767 890 123',
-        region: 'Thika Industrial',
-        vehicle: 'KCF 678F',
-      ),
-      Salesperson(
-        name: 'PETER ORONI',
-        code: 'KDB 087E',
-        phone: '+254 778 901 234',
-        region: 'Kakamega West',
-        vehicle: 'KCG 901G',
-      ),
-      Salesperson(
-        name: 'HUMPHREY JUMA',
-        code: 'KCZ 051E',
-        phone: '+254 789 012 345',
-        region: 'Machakos East',
-        vehicle: 'KCH 234H',
-      ),
-      Salesperson(
-        name: 'HESBON SIFUNA',
-        code: 'KCX 501C',
-        phone: '+254 790 123 456',
-        region: 'Bungoma South',
-        vehicle: 'KCI 567I',
-      ),
-      Salesperson(
-        name: 'BENARD KEVA',
-        code: 'KDC 378L',
-        phone: '+254 701 234 567',
-        region: 'Kericho Tea',
-        vehicle: 'KCJ 890J',
-      ),
-    ];
+      _allSalespeople =
+          vehiclesData.map((json) => Salesperson.fromJson(json)).toList();
 
-    _filteredSalespeople = List.from(_allSalespeople);
+      _filteredSalespeople = List.from(_allSalespeople);
 
-    setState(() {
-      _isLoading = false;
-    });
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load vehicles: ${e.toString()}'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    }
   }
 
   void _filterSalespeople() {

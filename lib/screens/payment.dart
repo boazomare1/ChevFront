@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:chevenergies/services/app_state.dart';
 import 'package:chevenergies/shared%20utils/widgets.dart';
@@ -23,8 +24,9 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   String _selectedMode = 'Cash';
   final TextEditingController _amountCtrl = TextEditingController();
-  final TextEditingController _chequeNumberCtrl = TextEditingController();
-  XFile? _chequeImage;
+  final TextEditingController _transcodeCtrl = TextEditingController();
+  final TextEditingController _referenceDateCtrl = TextEditingController();
+  XFile? _evidenceImage;
   bool _loading = false;
 
   final List<String> availableModes = ['Cash', 'Mpesa', 'Cheque', 'Invoice'];
@@ -40,7 +42,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
 
     if (_selectedMode == 'Cheque') {
-      if (_chequeNumberCtrl.text.isEmpty || _chequeImage == null) {
+      if (_transcodeCtrl.text.isEmpty || _evidenceImage == null) {
         showDialog(
           context: context,
           builder:
@@ -54,10 +56,39 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() => _loading = true);
 
     try {
-      await Provider.of<AppState>(
-        context,
-        listen: false,
-      ).createPayment(widget.invoiceId, amount, _selectedMode);
+      // Convert image to base64 if available
+      String? evidencePhoto;
+      if (_evidenceImage != null) {
+        final bytes = await _evidenceImage!.readAsBytes();
+        final base64Image = base64Encode(bytes);
+        evidencePhoto = 'data:image/jpeg;base64,$base64Image';
+      }
+
+      // Get current date for reference_date if not provided
+      String? referenceDate =
+          _referenceDateCtrl.text.isNotEmpty
+              ? _referenceDateCtrl.text
+              : DateTime.now().toIso8601String().split('T')[0];
+
+      // Debug logging
+      print('Payment Mode: $_selectedMode');
+      print('Transcode: ${_transcodeCtrl.text}');
+      print('Reference Date: $referenceDate');
+      print(
+        'Evidence Photo: ${evidencePhoto != null ? 'Present' : 'Not provided'}',
+      );
+
+      await Provider.of<AppState>(context, listen: false).createPayment(
+        widget.invoiceId,
+        amount,
+        _selectedMode,
+        transcode:
+            _selectedMode == 'Cheque' && _transcodeCtrl.text.isNotEmpty
+                ? _transcodeCtrl.text
+                : null,
+        referenceDate: _selectedMode == 'Cheque' ? referenceDate : null,
+        evidencePhoto: _selectedMode == 'Cheque' ? evidencePhoto : null,
+      );
 
       if (mounted) {
         // Add a small delay to ensure the API response is fully processed
@@ -115,11 +146,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
-  Future<void> _pickChequeImage() async {
+  Future<void> _pickEvidenceImage() async {
     final ImagePicker picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.camera);
     if (picked != null) {
-      setState(() => _chequeImage = picked);
+      setState(() => _evidenceImage = picked);
     }
   }
 
@@ -408,7 +439,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ),
                       ),
 
-                      // Cheque specific fields
+                      // Cheque specific fields (only for cheque payments)
                       if (_selectedMode == 'Cheque') ...[
                         const SizedBox(height: 16),
                         Container(
@@ -444,11 +475,32 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               ),
                               const SizedBox(height: 16),
                               TextField(
-                                controller: _chequeNumberCtrl,
+                                controller: _transcodeCtrl,
                                 decoration: AppTheme.inputDecoration(
                                   label: 'Cheque Number',
                                   prefixIcon: Icons.numbers,
                                 ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: _referenceDateCtrl,
+                                decoration: AppTheme.inputDecoration(
+                                  label: 'Reference Date (YYYY-MM-DD)',
+                                  prefixIcon: Icons.calendar_today,
+                                ),
+                                onTap: () async {
+                                  final date = await showDatePicker(
+                                    context: context,
+                                    initialDate: DateTime.now(),
+                                    firstDate: DateTime(2020),
+                                    lastDate: DateTime.now(),
+                                  );
+                                  if (date != null) {
+                                    _referenceDateCtrl.text =
+                                        date.toIso8601String().split('T')[0];
+                                  }
+                                },
+                                readOnly: true,
                               ),
                               const SizedBox(height: 16),
                               Container(
@@ -466,7 +518,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   ],
                                 ),
                                 child: ElevatedButton.icon(
-                                  onPressed: _pickChequeImage,
+                                  onPressed: _pickEvidenceImage,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppTheme.primaryColor,
                                     foregroundColor: Colors.white,
@@ -487,7 +539,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   ),
                                 ),
                               ),
-                              if (_chequeImage != null) ...[
+                              if (_evidenceImage != null) ...[
                                 const SizedBox(height: 16),
                                 Container(
                                   padding: const EdgeInsets.all(12),
@@ -512,7 +564,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       ClipRRect(
                                         borderRadius: BorderRadius.circular(8),
                                         child: Image.file(
-                                          File(_chequeImage!.path),
+                                          File(_evidenceImage!.path),
                                           height: 120,
                                           width: double.infinity,
                                           fit: BoxFit.cover,

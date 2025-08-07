@@ -2,9 +2,9 @@ import 'package:chevenergies/shared%20utils/widgets.dart';
 import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:chevenergies/screens/stock_keeper_dashboard.dart';
 import 'package:chevenergies/services/biometric_service.dart';
+import 'package:chevenergies/services/secure_storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/app_state.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -25,6 +25,12 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoadingCredentials = true;
   bool _isBiometricAvailable = false;
   bool _isBiometricEnabled = false;
+  bool _hasSavedCredentials = false;
+  bool _showEmailField =
+      false; // Track when user wants to sign in as different user
+  String? _savedEmail;
+  String? _savedFirstName;
+  String? _savedLastName;
 
   @override
   void initState() {
@@ -45,19 +51,94 @@ class _LoginScreenState extends State<LoginScreen> {
     return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
   }
 
+  String _getPersonalizedGreeting() {
+    if (_savedEmail == null) return 'Welcome back!';
+
+    final now = DateTime.now();
+    final hour = now.hour;
+    final weekday = now.weekday;
+
+    String timeGreeting;
+    if (weekday == DateTime.saturday || weekday == DateTime.sunday) {
+      timeGreeting = 'Good Weekend';
+    } else if (hour >= 4 && hour < 12) {
+      timeGreeting = 'Good Morning';
+    } else if (hour >= 12 && hour < 17) {
+      timeGreeting = 'Good Afternoon';
+    } else if (hour >= 17 && hour < 21) {
+      timeGreeting = 'Good Evening';
+    } else {
+      timeGreeting = 'Good Night';
+    }
+
+    return timeGreeting;
+  }
+
+  String _getUserInitials() {
+    if (_savedFirstName == null || _savedLastName == null) return '';
+
+    // Get user's initials from actual name
+    final firstInitial =
+        _savedFirstName!.isNotEmpty ? _savedFirstName![0].toUpperCase() : '';
+    final lastInitial =
+        _savedLastName!.isNotEmpty ? _savedLastName![0].toUpperCase() : '';
+
+    return '$firstInitial$lastInitial';
+  }
+
+  String _getUserName() {
+    if (_savedFirstName == null || _savedLastName == null) return '';
+
+    // Use actual stored names
+    final firstName =
+        _savedFirstName!.isNotEmpty
+            ? _savedFirstName![0].toUpperCase() +
+                _savedFirstName!.substring(1).toLowerCase()
+            : '';
+    final lastName =
+        _savedLastName!.isNotEmpty
+            ? _savedLastName![0].toUpperCase() +
+                _savedLastName!.substring(1).toLowerCase()
+            : '';
+
+    return '$firstName $lastName'.trim();
+  }
+
+  String _getWelcomeMessage() {
+    if (_hasSavedCredentials && !_showEmailField) {
+      return 'Enter your password to continue';
+    }
+    return 'Enter your credentials to continue';
+  }
+
   Future<void> _loadSavedCredentials() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedEmail = prefs.getString('saved_email');
-      final savedPassword = prefs.getString('saved_password');
-      final rememberMe = prefs.getBool('remember_me') ?? false;
+      final credentials = await SecureStorageService.loadCredentials();
+      final savedEmail = credentials['email'] as String?;
+      final savedPassword = credentials['password'] as String?;
+      final savedFirstName = credentials['firstName'] as String?;
+      final savedLastName = credentials['lastName'] as String?;
+      final rememberMe = credentials['rememberMe'] as bool;
 
       if (mounted) {
         setState(() {
           if (savedEmail != null && savedPassword != null && rememberMe) {
-            _emailController.text = savedEmail;
-            _passwordController.text = savedPassword;
+            _savedEmail = savedEmail;
+            _savedFirstName = savedFirstName;
+            _savedLastName = savedLastName;
+            _hasSavedCredentials = true;
+            _showEmailField =
+                false; // Reset flag when loading saved credentials
+            // Don't pre-fill the fields for better UX
+            _emailController.text = '';
+            _passwordController.text = '';
             _rememberMe = true;
+          } else {
+            _hasSavedCredentials = false;
+            _savedEmail = null;
+            _savedFirstName = null;
+            _savedLastName = null;
+            _showEmailField = false; // Reset flag when no saved credentials
           }
           _isLoadingCredentials = false;
         });
@@ -75,10 +156,16 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_rememberMe) return;
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('saved_email', _emailController.text.trim());
-      await prefs.setString('saved_password', _passwordController.text);
-      await prefs.setBool('remember_me', true);
+      // Get user data from AppState if available
+      final appState = Provider.of<AppState>(context, listen: false);
+      final user = appState.user;
+
+      await SecureStorageService.saveCredentials(
+        _emailController.text.trim(),
+        _passwordController.text,
+        user?.firstName,
+        user?.lastName,
+      );
     } catch (e) {
       // Silently handle save errors
     }
@@ -86,10 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _clearSavedCredentials() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('saved_email');
-      await prefs.remove('saved_password');
-      await prefs.setBool('remember_me', false);
+      await SecureStorageService.clearCredentials();
       // Also clear from BiometricService
       await BiometricService.disableBiometric();
     } catch (e) {
@@ -100,15 +184,24 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login() async {
     setState(() => _fieldError = null);
 
-    final email = _emailController.text.trim();
+    String email;
     final pass = _passwordController.text;
 
-    if (email.isEmpty || pass.isEmpty) {
-      setState(() => _fieldError = email.isEmpty ? 'email' : 'password');
+    // If we have saved credentials, use the saved email
+    if (_hasSavedCredentials && _savedEmail != null) {
+      email = _savedEmail!;
+    } else {
+      email = _emailController.text.trim();
+    }
+
+    if (pass.isEmpty) {
+      setState(() => _fieldError = 'password');
       return;
     }
-    if (!_isValidEmail(email)) {
-      setState(() => _fieldError = 'email');
+
+    // Only validate email if we don't have saved credentials
+    if (!_hasSavedCredentials && (email.isEmpty || !_isValidEmail(email))) {
+      setState(() => _fieldError = email.isEmpty ? 'email' : 'email');
       return;
     }
 
@@ -139,28 +232,47 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (mounted) {
-        setState(() => _isLoading = false);
-        Navigator.pushReplacementNamed(context, '/');
+        setState(() {
+          _isLoading = false;
+          _showEmailField = false; // Reset the flag on successful login
+        });
+
+        // Role-based routing
+        final user = Provider.of<AppState>(context, listen: false).user;
+        final userRoles =
+            user?.role ?? ['salesperson']; // Default to salesperson
+
+        // Check if user has stock keeper role
+        final isStockKeeper = userRoles.any(
+          (role) =>
+              role.toLowerCase() == 'stockkeeper' ||
+              role.toLowerCase() == 'stock_keeper' ||
+              role.toLowerCase() == 'stock keeper',
+        );
+
+        if (isStockKeeper) {
+          // Route to Stock Keeper Dashboard
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const StockKeeperDashboard()),
+          );
+        } else {
+          // Route to regular dashboard (salesperson)
+          Navigator.pushReplacementNamed(context, '/');
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
 
-        // For testing: Redirect to stock keeper dashboard on login failure
-        // In production, this would show the error dialog instead
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const StockKeeperDashboard()),
+        // Show error dialog for invalid credentials
+        showDialog(
+          context: context,
+          builder:
+              (_) => const ErrorDialog(
+                message: 'Authentication Failed - check your credentials',
+              ),
         );
-
-        // Uncomment the following lines for production error handling:
-        // showDialog(
-        //   context: context,
-        //   builder:
-        //       (_) => const ErrorDialog(
-        //         message: 'Authentication Failed - check your credentials',
-        //       ),
-        // );
       }
     }
   }
@@ -241,8 +353,34 @@ class _LoginScreenState extends State<LoginScreen> {
       print('🔐 Login successful!');
 
       if (mounted) {
-        setState(() => _isLoading = false);
-        Navigator.pushReplacementNamed(context, '/');
+        setState(() {
+          _isLoading = false;
+          _showEmailField = false; // Reset the flag on successful login
+        });
+
+        // Role-based routing
+        final user = Provider.of<AppState>(context, listen: false).user;
+        final userRoles =
+            user?.role ?? ['salesperson']; // Default to salesperson
+
+        // Check if user has stock keeper role
+        final isStockKeeper = userRoles.any(
+          (role) =>
+              role.toLowerCase() == 'stockkeeper' ||
+              role.toLowerCase() == 'stock_keeper' ||
+              role.toLowerCase() == 'stock keeper',
+        );
+
+        if (isStockKeeper) {
+          // Route to Stock Keeper Dashboard
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const StockKeeperDashboard()),
+          );
+        } else {
+          // Route to regular dashboard (salesperson)
+          Navigator.pushReplacementNamed(context, '/');
+        }
       }
     } catch (e) {
       print('🔐 Biometric login error: $e');
@@ -342,13 +480,49 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Welcome back!',
+                      _getPersonalizedGreeting(),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+
+                    // User initials circle and name for returning users
+                    if (_hasSavedCredentials && _savedEmail != null) ...[
+                      const SizedBox(height: 20),
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _getUserInitials(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _getUserName(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -368,65 +542,70 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const Text('LOGIN', style: AppTheme.headingMedium),
                     const SizedBox(height: 8),
-                    Text(
-                      'Enter your credentials to continue',
-                      style: AppTheme.bodySmall,
-                    ),
+                    Text(_getWelcomeMessage(), style: AppTheme.bodySmall),
                     const SizedBox(height: 30),
 
-                    // Email field
-                    StyledTextField(
-                      controller: _emailController,
-                      label: 'Email Address',
-                      keyboardType: TextInputType.emailAddress,
-                      prefixIcon: const Icon(Icons.email),
-                      validator: (value) => emailErrorText,
-                    ),
-                    const SizedBox(height: 20),
+                    // Email field - show if no saved credentials OR user wants to sign in as different user
+                    if (!_hasSavedCredentials || _showEmailField) ...[
+                      StyledTextField(
+                        controller: _emailController,
+                        label: 'Email Address',
+                        keyboardType: TextInputType.emailAddress,
+                        obscureText: false, // Always show clear text for email
+                        prefixIcon: const Icon(Icons.email),
+                        validator: (value) => emailErrorText,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
                     // Password field
                     StyledTextField(
                       controller: _passwordController,
-                      label: 'Password',
+                      label:
+                          (_hasSavedCredentials && !_showEmailField)
+                              ? 'Enter your password'
+                              : 'Password',
                       obscureText: true,
                       prefixIcon: const Icon(Icons.lock),
                       validator: (value) => passErrorText,
                     ),
                     const SizedBox(height: 20),
 
-                    // Remember Me checkbox
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: _rememberMe,
-                          onChanged: (value) {
-                            setState(() {
-                              _rememberMe = value ?? false;
-                            });
-                          },
-                          activeColor: AppTheme.primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
+                    // Remember Me checkbox - only show if no saved credentials
+                    if (!_hasSavedCredentials) ...[
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _rememberMe,
+                            onChanged: (value) {
                               setState(() {
-                                _rememberMe = !_rememberMe;
+                                _rememberMe = value ?? false;
                               });
                             },
-                            child: Text(
-                              'Remember Me',
-                              style: AppTheme.bodyMedium.copyWith(
-                                color: AppTheme.textSecondary,
+                            activeColor: AppTheme.primaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _rememberMe = !_rememberMe;
+                                });
+                              },
+                              child: Text(
+                                'Remember Me',
+                                style: AppTheme.bodyMedium.copyWith(
+                                  color: AppTheme.textSecondary,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 30),
 
                     // Login button
@@ -447,9 +626,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                 )
-                                : const Text(
-                                  'SIGN IN',
-                                  style: TextStyle(
+                                : Text(
+                                  (_hasSavedCredentials && !_showEmailField)
+                                      ? 'CONTINUE'
+                                      : 'SIGN IN',
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                     letterSpacing: 0.5,
@@ -457,6 +638,30 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                       ),
                     ),
+
+                    // Sign in as different user option
+                    if (_hasSavedCredentials && !_showEmailField) ...[
+                      const SizedBox(height: 20),
+                      Center(
+                        child: TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _showEmailField = true; // Show email field
+                              _emailController.clear();
+                              _passwordController.clear();
+                              _rememberMe = false;
+                            });
+                          },
+                          child: Text(
+                            'Sign in as different user',
+                            style: AppTheme.bodySmall.copyWith(
+                              color: AppTheme.primaryColor,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
 
                     // Biometric authentication section
                     if (_isBiometricAvailable) ...[

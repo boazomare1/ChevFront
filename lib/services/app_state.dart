@@ -70,8 +70,21 @@ class AppState with ChangeNotifier {
     return apiService.raiseTicket(routeId, stopId, day, notes);
   }
 
-  Future<void> createPayment(String invoiceId, double amount, String mode) =>
-      apiService.createPayment(invoiceId, amount, mode);
+  Future<void> createPayment(
+    String invoiceId,
+    double amount,
+    String mode, {
+    String? transcode,
+    String? referenceDate,
+    String? evidencePhoto,
+  }) => apiService.createPayment(
+    invoiceId,
+    amount,
+    mode,
+    transcode: transcode,
+    referenceDate: referenceDate,
+    evidencePhoto: evidencePhoto,
+  );
 
   Future<void> fetchInvoices({
     required DateTime startDate,
@@ -275,9 +288,13 @@ class AppState with ChangeNotifier {
         date: date,
       );
 
+      print('AppState: Setting todaySummary to: $todaySummary');
       _todaySummary = todaySummary;
       _isLoadingTodaySummary = false;
       notifyListeners();
+      print(
+        'AppState: Notified listeners, todaySummary is now: $_todaySummary',
+      );
     } catch (e) {
       print('Error fetching today summary: $e');
       _todaySummary = null;
@@ -286,4 +303,14 @@ class AppState with ChangeNotifier {
       rethrow;
     }
   }
+
+  // Stock Management Methods
+  Future<List<Map<String, dynamic>>> listVehicles() =>
+      apiService.listVehicles();
+
+  Future<List<Map<String, dynamic>>> getVehicleItems(String routeId) =>
+      apiService.getVehicleItems(routeId);
+
+  Future<Map<String, dynamic>> submitStockCount(Map<String, dynamic> payload) =>
+      apiService.submitStockCount(payload);
 }

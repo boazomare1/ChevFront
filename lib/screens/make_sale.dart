@@ -4,6 +4,7 @@ import 'package:chevenergies/services/app_state.dart';
 import 'package:chevenergies/shared%20utils/extension.dart';
 import 'package:chevenergies/shared%20utils/widgets.dart';
 import 'package:chevenergies/shared utils/app_theme.dart';
+import 'package:chevenergies/widgets/customer_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +16,7 @@ class MakeSaleScreen extends StatefulWidget {
   final String day;
   final double stopLat;
   final double stopLng;
+  final String logoUrl;
   final VoidCallback? onComplete;
 
   const MakeSaleScreen({
@@ -25,6 +27,7 @@ class MakeSaleScreen extends StatefulWidget {
     required this.day,
     required this.stopLat,
     required this.stopLng,
+    required this.logoUrl,
     required this.onComplete,
   });
 
@@ -138,6 +141,9 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
               elevation: 0,
               backgroundColor: Colors.transparent,
               child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.8,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -147,7 +153,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.2),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -165,7 +171,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                           end: Alignment.bottomRight,
                           colors: [
                             AppTheme.primaryColor,
-                            AppTheme.primaryColor.withOpacity(0.8),
+                            AppTheme.primaryColor.withValues(alpha: 0.8),
                           ],
                         ),
                         borderRadius: const BorderRadius.only(
@@ -178,7 +184,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
@@ -193,16 +199,16 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Add Product',
+                                  'Add Products',
                                   style: AppTheme.headingMedium.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
-                                  'Select product and quantity',
+                                  'Select products and quantities',
                                   style: AppTheme.bodySmall.copyWith(
-                                    color: Colors.white.withOpacity(0.9),
+                                    color: Colors.white.withValues(alpha: 0.9),
                                   ),
                                 ),
                               ],
@@ -212,144 +218,311 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                       ),
                     ),
 
+                    // Current items preview
+                    if (saleItems.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.backgroundColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.shopping_cart,
+                                  color: AppTheme.primaryColor,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Current Items (${saleItems.length})',
+                                  style: AppTheme.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ...saleItems
+                                .take(3)
+                                .map(
+                                  (item) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 4),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            '${item['name']} x${item['qty']}',
+                                            style: AppTheme.bodySmall,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Ksh ${((item['price'] - item['discount']) * item['qty']).toStringAsFixed(0)}',
+                                          style: AppTheme.bodySmall.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            if (saleItems.length > 3)
+                              Text(
+                                '... and ${saleItems.length - 3} more',
+                                style: AppTheme.bodySmall.copyWith(
+                                  color: Colors.grey,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+
                     // Content section
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: StatefulBuilder(
-                        builder: (ctx, setInner) {
-                          List<Item> filtered =
-                              items.where((i) {
-                                final name = i.itemName ?? '';
-                                final query = searchCtrl.text;
-                                return name.toLowerCase().contains(
-                                  query.toLowerCase(),
-                                );
-                              }).toList();
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: StatefulBuilder(
+                          builder: (ctx, setInner) {
+                            List<Item> filtered =
+                                items.where((i) {
+                                  final name = i.itemName ?? '';
+                                  final query = searchCtrl.text;
+                                  return name.toLowerCase().contains(
+                                    query.toLowerCase(),
+                                  );
+                                }).toList();
 
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Product selection
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: AppTheme.textLight.withOpacity(0.3),
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 5,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: StyledSelectField<Item>(
-                                  label: 'Choose Product',
-                                  items: items,
-                                  selected: selected,
-                                  onChanged:
-                                      (item) => setInner(() => selected = item),
-                                  displayString:
-                                      (item) =>
-                                          '${item.itemName} (Ksh ${item.sellingPrice})',
-                                ),
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              // Quantity input
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: AppTheme.textLight.withOpacity(0.3),
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 5,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: StyledTextField(
-                                  label: 'Quantity',
-                                  controller: qtyCtrl,
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-
-                              const SizedBox(height: 16),
-
-                              // Discount section
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: AppTheme.backgroundColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: AppTheme.primaryColor.withOpacity(
-                                      0.2,
-                                    ),
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    CheckboxListTile(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 8,
-                                          ),
-                                      title: Text(
-                                        'Apply discount?',
-                                        style: AppTheme.bodyMedium.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Search field
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: AppTheme.textLight.withValues(
+                                        alpha: 0.3,
                                       ),
-                                      value: applyDisc,
-                                      onChanged:
-                                          (v) => setInner(
-                                            () => applyDisc = v ?? false,
-                                          ),
-                                      activeColor: AppTheme.primaryColor,
-                                      checkColor: Colors.white,
                                     ),
-                                    if (applyDisc) ...[
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          16,
-                                          0,
-                                          16,
-                                          16,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.05,
                                         ),
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            border: Border.all(
-                                              color: AppTheme.primaryColor
-                                                  .withOpacity(0.3),
-                                            ),
-                                          ),
-                                          child: StyledTextField(
-                                            label: 'Discount Amount (Ksh)',
-                                            controller: discCtrl,
-                                            keyboardType: TextInputType.number,
-                                          ),
-                                        ),
+                                        blurRadius: 5,
+                                        offset: const Offset(0, 2),
                                       ),
                                     ],
-                                  ],
+                                  ),
+                                  child: TextFormField(
+                                    controller: searchCtrl,
+                                    onChanged: (value) => setInner(() {}),
+                                    decoration: InputDecoration(
+                                      labelText: 'Search products...',
+                                      prefixIcon: const Icon(Icons.search),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey[400]!,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: Colors.grey[400]!,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide(
+                                          color: AppTheme.primaryColor,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.grey[100],
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            vertical: 16,
+                                            horizontal: 12,
+                                          ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          );
-                        },
+
+                                const SizedBox(height: 16),
+
+                                // Product selection
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: AppTheme.textLight.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                        blurRadius: 5,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: StyledSelectField<Item>(
+                                    label: 'Choose Product',
+                                    items: filtered,
+                                    selected: selected,
+                                    onChanged: (item) {
+                                      setInner(() {
+                                        selected = item;
+                                        // Check if item already exists
+                                        final existingIndex = saleItems
+                                            .indexWhere(
+                                              (saleItem) =>
+                                                  saleItem['itemCode'] ==
+                                                  item?.itemCode,
+                                            );
+                                        if (existingIndex != -1) {
+                                          final existingItem =
+                                              saleItems[existingIndex];
+                                          qtyCtrl.text =
+                                              (existingItem['qty'] as int)
+                                                  .toString();
+                                          discCtrl.text =
+                                              (existingItem['discount']
+                                                      as double)
+                                                  .toString();
+                                          applyDisc =
+                                              existingItem['discount'] > 0;
+                                        } else {
+                                          qtyCtrl.text = '1';
+                                          discCtrl.text = '';
+                                          applyDisc = false;
+                                        }
+                                      });
+                                    },
+                                    displayString:
+                                        (item) =>
+                                            '${item.itemName} (Ksh ${item.sellingPrice})',
+                                  ),
+                                ),
+
+                                const SizedBox(height: 16),
+
+                                // Quantity input
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: AppTheme.textLight.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                        blurRadius: 5,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: StyledTextField(
+                                    label: 'Quantity',
+                                    controller: qtyCtrl,
+                                    keyboardType: TextInputType.number,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 16),
+
+                                // Discount section
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.backgroundColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: AppTheme.primaryColor.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      CheckboxListTile(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
+                                        title: Text(
+                                          'Apply discount?',
+                                          style: AppTheme.bodyMedium.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        value: applyDisc,
+                                        onChanged:
+                                            (v) => setInner(
+                                              () => applyDisc = v ?? false,
+                                            ),
+                                        activeColor: AppTheme.primaryColor,
+                                        checkColor: Colors.white,
+                                      ),
+                                      if (applyDisc) ...[
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                            16,
+                                            0,
+                                            16,
+                                            16,
+                                          ),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: AppTheme.primaryColor
+                                                    .withValues(alpha: 0.3),
+                                              ),
+                                            ),
+                                            child: StyledTextField(
+                                              label: 'Discount Amount (Ksh)',
+                                              controller: discCtrl,
+                                              keyboardType:
+                                                  TextInputType.number,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 20),
+                              ],
+                            );
+                          },
+                        ),
                       ),
                     ),
 
@@ -385,21 +558,56 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                                   final q = int.tryParse(qtyCtrl.text) ?? 1;
                                   final d =
                                       double.tryParse(discCtrl.text) ?? 0.0;
+                                  final discount =
+                                      applyDisc
+                                          ? d.clamp(
+                                            0,
+                                            selected!.sellingPrice as num,
+                                          )
+                                          : 0.0;
+
+                                  // Check if item already exists
+                                  final existingIndex = saleItems.indexWhere(
+                                    (saleItem) =>
+                                        saleItem['itemCode'] ==
+                                        selected!.itemCode,
+                                  );
+
                                   setState(() {
-                                    saleItems.add({
-                                      'itemCode': selected!.itemCode,
-                                      'name': selected!.itemName,
-                                      'price': selected!.sellingPrice,
-                                      'qty': q,
-                                      'discount':
-                                          applyDisc
-                                              ? d.clamp(
-                                                0,
-                                                selected!.sellingPrice as num,
-                                              )
-                                              : 0.0,
-                                    });
+                                    if (existingIndex != -1) {
+                                      // Update existing item
+                                      saleItems[existingIndex] = {
+                                        'itemCode': selected!.itemCode,
+                                        'name': selected!.itemName,
+                                        'price': selected!.sellingPrice,
+                                        'qty': q,
+                                        'discount': discount,
+                                      };
+                                    } else {
+                                      // Add new item
+                                      saleItems.add({
+                                        'itemCode': selected!.itemCode,
+                                        'name': selected!.itemName,
+                                        'price': selected!.sellingPrice,
+                                        'qty': q,
+                                        'discount': discount,
+                                      });
+                                    }
                                   });
+
+                                  // Show feedback
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        existingIndex != -1
+                                            ? 'Updated ${selected!.itemName} quantity'
+                                            : 'Added ${selected!.itemName} to sale',
+                                      ),
+                                      backgroundColor: AppTheme.successColor,
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+
                                   Navigator.pop(context);
                                 }
                               },
@@ -419,9 +627,16 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                                 children: [
                                   const Icon(Icons.add, size: 18),
                                   const SizedBox(width: 8),
-                                  const Text(
-                                    'ADD PRODUCT',
-                                    style: TextStyle(
+                                  Text(
+                                    selected != null &&
+                                            saleItems.any(
+                                              (item) =>
+                                                  item['itemCode'] ==
+                                                  selected!.itemCode,
+                                            )
+                                        ? 'UPDATE'
+                                        : 'ADD PRODUCT',
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -930,12 +1145,15 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 40), // Space for remove button
                 ],
               ),
             ),
             const SizedBox(height: 8),
             // Items list
-            ...saleItems.map((itm) {
+            ...saleItems.asMap().entries.map((entry) {
+              final index = entry.key;
+              final itm = entry.value;
               final price = itm['price'] as double;
               final qty = itm['qty'] as int;
               final disc = itm['discount'] as double;
@@ -947,7 +1165,7 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppTheme.textLight.withOpacity(0.3),
+                    color: AppTheme.textLight.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -1004,6 +1222,28 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                           color: AppTheme.primaryColor,
                         ),
                       ),
+                    ),
+                    // Remove button
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          saleItems.removeAt(index);
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Removed ${itm['name']} from sale'),
+                            backgroundColor: AppTheme.warningColor,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.red,
+                        size: 20,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                     ),
                   ],
                 ),
@@ -1157,11 +1397,25 @@ class _MakeSaleScreenState extends State<MakeSaleScreen> {
                               fontSize: 20,
                             ),
                           ),
-                          Text(
-                            widget.shopName.toUpperCase(),
-                            style: AppTheme.bodyMedium.copyWith(
-                              color: Colors.white.withOpacity(0.9),
-                            ),
+                          Row(
+                            children: [
+                              CustomerLogo(
+                                logoUrl: widget.logoUrl,
+                                width: 40,
+                                height: 40,
+                                placeholderAsset: 'assets/gas-cylinder.png',
+                                shopName: widget.shopName,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  widget.shopName.toUpperCase(),
+                                  style: AppTheme.bodyMedium.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

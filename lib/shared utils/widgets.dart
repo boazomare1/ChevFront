@@ -37,12 +37,20 @@ class _StyledTextFieldState extends State<StyledTextField> {
   }
 
   @override
+  void didUpdateWidget(StyledTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.obscureText != widget.obscureText) {
+      _isObscure = widget.obscureText;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: widget.controller,
-        obscureText: _isObscure,
+        obscureText: widget.obscureText ? _isObscure : false,
         keyboardType: widget.keyboardType,
         inputFormatters: widget.inputFormatters,
         validator: widget.validator,

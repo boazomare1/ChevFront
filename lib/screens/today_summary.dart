@@ -69,6 +69,17 @@ class _TotalSalesScreenState extends State<TotalSalesScreen> {
           final todaySummary = appState.todaySummary;
           final isLoading = appState.isLoadingTodaySummary;
 
+          // Debug print
+          print('Today Summary Debug:');
+          print('isLoading: $isLoading');
+          print('todaySummary: $todaySummary');
+          if (todaySummary != null) {
+            print('sales_summary: ${todaySummary['sales_summary']}');
+            print(
+              'formatted_total: ${todaySummary['sales_summary']?['formatted_total']}',
+            );
+          }
+
           if (isLoading) {
             return const Center(
               child: CircularProgressIndicator(
@@ -394,7 +405,7 @@ class _TotalSalesScreenState extends State<TotalSalesScreen> {
                                     Text(
                                       todaySummary?['sales_summary']?['formatted_total']
                                               ?.toString() ??
-                                          'KES 0',
+                                          'KES 0 (No data)',
                                       style: AppTheme.headingMedium.copyWith(
                                         fontWeight: FontWeight.bold,
                                         color: AppTheme.primaryColor,
