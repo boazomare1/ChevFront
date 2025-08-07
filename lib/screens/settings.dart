@@ -2,6 +2,7 @@ import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:chevenergies/services/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -484,7 +485,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '© 2025 Techsavanna Software Technologies',
+                        '© ${DateTime.now().year} Techsavanna Software Technologies',
                         style: AppTheme.bodySmall.copyWith(
                           color: AppTheme.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -497,6 +498,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           color: AppTheme.textSecondary,
                         ),
                         textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () async {
+                          // Launch website URL
+                          final url = 'https://techsavanna.co.ke/';
+                          if (await canLaunchUrl(Uri.parse(url))) {
+                            await launchUrl(Uri.parse(url));
+                          }
+                        },
+                        child: Text(
+                          'techsavanna.co.ke',
+                          style: AppTheme.bodySmall.copyWith(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w500,
+                            decoration: TextDecoration.underline,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ],
                   ),

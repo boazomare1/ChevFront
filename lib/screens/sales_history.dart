@@ -721,7 +721,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                 pw.SizedBox(height: 10),
                 pw.Center(
                   child: pw.Text(
-                    '© 2025 Techsavanna Software Technologies. All Rights Reserved.',
+                    '© ${DateTime.now().year} Techsavanna Software Technologies. All Rights Reserved.',
                     style: pw.TextStyle(
                       fontSize: 10,
                       color: PdfColors.grey600,
@@ -735,6 +735,16 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                     style: pw.TextStyle(
                       fontSize: 9,
                       color: PdfColors.grey500,
+                    ),
+                    textAlign: pw.TextAlign.center,
+                  ),
+                ),
+                pw.Center(
+                  child: pw.Text(
+                    'techsavanna.co.ke',
+                    style: pw.TextStyle(
+                      fontSize: 8,
+                      color: PdfColors.blue,
                     ),
                     textAlign: pw.TextAlign.center,
                   ),
