@@ -572,7 +572,7 @@ class _TicketSalesScreenState extends State<TicketSalesScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.receipt_long,
+                              Icons.support_agent,
                               size: 64,
                               color: Colors.grey[400],
                             ),

@@ -279,7 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'route': '/cheque-sales',
       },
       {
-        'icon': Icons.receipt_long,
+        'icon': Icons.support_agent,
         'title': 'Ticket Sales',
         'route': '/ticket-sales',
       },
