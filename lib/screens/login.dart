@@ -1,10 +1,8 @@
 import 'package:chevenergies/shared%20utils/widgets.dart';
 import 'package:chevenergies/shared utils/app_theme.dart';
 import 'package:chevenergies/screens/stock_keeper_dashboard.dart';
-import 'package:chevenergies/screens/changelog_viewer.dart';
 import 'package:chevenergies/services/biometric_service.dart';
 import 'package:chevenergies/services/secure_storage_service.dart';
-import 'package:chevenergies/services/changelog_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
@@ -30,7 +28,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _hasSavedCredentials = false;
   bool _showEmailField =
       false; // Track when user wants to sign in as different user
-  bool _shouldShowChangelog = false;
   String? _savedEmail;
   String? _savedFirstName;
   String? _savedLastName;
@@ -40,7 +37,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     _loadSavedCredentials();
     _checkBiometricStatus();
-    _checkChangelogStatus();
   }
 
   @override
@@ -293,12 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _checkChangelogStatus() async {
-    _shouldShowChangelog = await ChangelogService.shouldShowChangelog();
-    if (mounted) {
-      setState(() {});
-    }
-  }
+
 
   Future<void> _authenticateWithBiometrics() async {
     setState(() => _isLoading = true);
@@ -482,39 +473,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             fit: BoxFit.contain,
                           ),
                         ),
-                        if (_shouldShowChangelog)
-                          IconButton(
-                            onPressed: () async {
-                              // Mark version as seen when user opens changelog
-                              await ChangelogService.markVersionAsSeen();
-                              setState(() {
-                                _shouldShowChangelog = false;
-                              });
-                              
-                              if (mounted) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const ChangelogViewer(
-                                      showSkipButton: false,
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            icon: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.new_releases,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                          ),
+
                       ],
                     ),
                     const SizedBox(height: 20),
