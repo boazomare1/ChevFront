@@ -75,6 +75,27 @@ class _CustomersScreenState extends State<CustomersScreen>
   @override
   bool get wantKeepAlive => false; // Don't keep alive, always refresh
 
+  String _getDayFromDate(DateTime date) {
+    switch (date.weekday) {
+      case DateTime.monday:
+        return 'MONDAY';
+      case DateTime.tuesday:
+        return 'TUESDAY';
+      case DateTime.wednesday:
+        return 'WEDNESDAY';
+      case DateTime.thursday:
+        return 'THURSDAY';
+      case DateTime.friday:
+        return 'FRIDAY';
+      case DateTime.saturday:
+        return 'SATURDAY';
+      case DateTime.sunday:
+        return 'SUNDAY';
+      default:
+        return 'MONDAY';
+    }
+  }
+
   Future<void> _initLocationAndData() async {
     setState(() {
       _isLoading = true;
@@ -88,8 +109,8 @@ class _CustomersScreenState extends State<CustomersScreen>
       );
 
       // Determine today's route based on current weekday
-      final today = DateTime.now().weekday == DateTime.monday ? 'monday' : 'tuesday';
-      
+      final today = _getDayFromDate(DateTime.now());
+
       final routes = await Provider.of<AppState>(
         context,
         listen: false,
@@ -186,7 +207,7 @@ class _CustomersScreenState extends State<CustomersScreen>
               shopName: stop.shop,
               routeId: routeId,
               stopId: stop.name,
-              day: widget.day ?? 'monday',
+              day: widget.day ?? _getDayFromDate(DateTime.now()),
               stopLat: stop.latitude,
               stopLng: stop.longitude,
               logoUrl: stop.logo,

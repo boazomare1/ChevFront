@@ -459,11 +459,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
         break;
       case '/customers':
+        final today = _getDayFromDate(DateTime.now());
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const CustomersScreen(),
-          ), // Show all customers
+            builder: (_) => CustomersScreen(day: today),
+          ), // Show today's customers
         );
         break;
       case '/sales-history':
@@ -490,6 +491,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
           MaterialPageRoute(builder: (_) => const ChequeSalesScreen()),
         );
         break;
+    }
+  }
+
+  String _getDayFromDate(DateTime date) {
+    switch (date.weekday) {
+      case DateTime.monday:
+        return 'MONDAY';
+      case DateTime.tuesday:
+        return 'TUESDAY';
+      case DateTime.wednesday:
+        return 'WEDNESDAY';
+      case DateTime.thursday:
+        return 'THURSDAY';
+      case DateTime.friday:
+        return 'FRIDAY';
+      case DateTime.saturday:
+        return 'SATURDAY';
+      case DateTime.sunday:
+        return 'SUNDAY';
+      default:
+        return 'MONDAY';
     }
   }
 }
