@@ -10,6 +10,7 @@ import 'package:chevenergies/screens/stock_screen.dart';
 import 'package:chevenergies/screens/customers.dart';
 import 'package:chevenergies/screens/discount_sales.dart';
 import 'package:chevenergies/screens/cheque_sales.dart';
+import 'package:chevenergies/screens/ticket_sales.dart';
 import 'package:chevenergies/screens/biometric_settings.dart';
 import 'package:chevenergies/screens/change_password.dart';
 import 'package:chevenergies/screens/update_profile_image.dart';
@@ -277,6 +278,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'title': 'Cheque Sales',
         'route': '/cheque-sales',
       },
+      {
+        'icon': Icons.receipt_long,
+        'title': 'Ticket Sales',
+        'route': '/ticket-sales',
+      },
     ];
 
     return GridView.builder(
@@ -489,6 +495,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const ChequeSalesScreen()),
+        );
+        break;
+      case '/ticket-sales':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TicketSalesScreen()),
         );
         break;
     }

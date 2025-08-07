@@ -52,6 +52,8 @@ class ChangelogViewer extends StatelessWidget {
                   '⚙️ Enhanced app settings with company details',
                   '👥 Fixed customers screen to show today\'s customers with correct day format',
                   '📸 Added camera capture functionality for shop images',
+                  '🎫 Added Ticket Sales screen with filtering by reason',
+                  '📅 Added date filter to Discount Sales (single day selection)',
                 ], themeProvider),
                 const SizedBox(height: 20),
                 _buildVersionSection(context, 'v2.07.2025', 'August 6, 2025', [
