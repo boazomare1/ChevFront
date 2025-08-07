@@ -19,7 +19,6 @@ class _DiscountSalesScreenState extends State<DiscountSalesScreen>
   Set<String> expandedSaleIds = {};
   String searchQuery = '';
   String? statusFilter; // 'Pending', 'Approved', 'Rejected', null
-  DateTime _selectedDate = DateTime.now();
   bool _hasInitialized = false;
 
   @override
@@ -75,25 +74,8 @@ class _DiscountSalesScreenState extends State<DiscountSalesScreen>
     setState(() {
       searchQuery = '';
       statusFilter = null;
-      _selectedDate = DateTime.now();
     });
     _loadDiscountSales();
-  }
-
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now(),
-    );
-
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
-      _loadDiscountSales();
-    }
   }
 
   void _goToPaymentScreen(DiscountSale sale) {
@@ -781,40 +763,6 @@ class _DiscountSalesScreenState extends State<DiscountSalesScreen>
                     ),
                     const SizedBox(height: 12),
 
-                    // Date filter
-                    GestureDetector(
-                      onTap: _selectDate,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.textLight),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              color: AppTheme.primaryColor,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                DateFormat('EEEE, MMMM dd, yyyy').format(_selectedDate),
-                                style: AppTheme.bodyMedium,
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_drop_down,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
                     // Status filter
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -878,7 +826,7 @@ class _DiscountSalesScreenState extends State<DiscountSalesScreen>
                     ),
 
                     // Clear filters button
-                    if (searchQuery.isNotEmpty || statusFilter != null || _selectedDate != DateTime.now())
+                    if (searchQuery.isNotEmpty || statusFilter != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: TextButton.icon(
