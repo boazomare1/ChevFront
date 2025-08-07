@@ -120,6 +120,29 @@ class ApiService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> listTickets({
+    required String routeId,
+    required String day,
+    required String date,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/route_plan.apis.sales.list_tickets'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'route_id': routeId, 'day': day, 'date': date}),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return (data['tickets'] as List)
+          .map((ticket) => ticket as Map<String, dynamic>)
+          .toList();
+    } else {
+      throw Exception('Failed to fetch tickets: ${response.body}');
+    }
+  }
+
   Future<List<RouteData>> getRoutes(String day, String routeId) async {
     final response = await http.post(
       Uri.parse('$baseUrl/route_plan.apis.route.get_salesman_routes_for_day'),
