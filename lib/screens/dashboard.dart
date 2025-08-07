@@ -459,11 +459,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
         break;
       case '/customers':
-        final today =
-            DateTime.now().weekday == DateTime.monday ? 'monday' : 'tuesday';
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => CustomersScreen(day: today)),
+          MaterialPageRoute(builder: (_) => const CustomersScreen()), // Show all customers
         );
         break;
       case '/sales-history':

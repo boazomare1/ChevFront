@@ -11,8 +11,8 @@ import 'package:provider/provider.dart';
 import '../services/app_state.dart';
 
 class CustomersScreen extends StatefulWidget {
-  final String day;
-  const CustomersScreen({super.key, required this.day});
+  final String? day; // Make day optional
+  const CustomersScreen({super.key, this.day});
 
   @override
   _CustomersScreenState createState() => _CustomersScreenState();
@@ -90,7 +90,7 @@ class _CustomersScreenState extends State<CustomersScreen>
       final routes = await Provider.of<AppState>(
         context,
         listen: false,
-      ).getRoutes(widget.day);
+      ).getRoutes(widget.day ?? 'monday'); // Default to monday if no day specified
 
       _stops = [];
       _stopToRouteMap.clear();
@@ -181,7 +181,7 @@ class _CustomersScreenState extends State<CustomersScreen>
               shopName: stop.shop,
               routeId: routeId,
               stopId: stop.name,
-              day: widget.day,
+              day: widget.day ?? 'monday',
               stopLat: stop.latitude,
               stopLng: stop.longitude,
               logoUrl: stop.logo,
@@ -270,7 +270,7 @@ class _CustomersScreenState extends State<CustomersScreen>
               ? AppTheme.emptyState(
                 icon: Icons.people_outline,
                 title: 'No Customers Available',
-                subtitle: 'No customers to serve for ${widget.day}',
+                subtitle: widget.day != null ? 'No customers to serve for ${widget.day}' : 'No customers available',
               )
               : Column(
                 children: [
@@ -315,7 +315,7 @@ class _CustomersScreenState extends State<CustomersScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${widget.day.toUpperCase()} ROUTE',
+                                    '${(widget.day ?? 'ALL').toUpperCase()} ROUTE',
                                     style: AppTheme.headingLarge.copyWith(
                                       color: Colors.white,
                                       fontSize: 20,
