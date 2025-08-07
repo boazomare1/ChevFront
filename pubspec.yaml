@@ -1,7 +1,7 @@
 name: chevenergies
-description: "A new Flutter project."
+description: "Chev Energies - LPG Sales Management System by Techsavanna Software Technologies"
 publish_to: 'none'
-version: 1.0.0+1
+version: 2.08.2025+208
 
 environment:
   sdk: ^3.7.2
