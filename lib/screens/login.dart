@@ -187,11 +187,11 @@ class _LoginScreenState extends State<LoginScreen> {
     String email;
     final pass = _passwordController.text;
 
-    // If we have saved credentials, use the saved email
-    if (_hasSavedCredentials && _savedEmail != null) {
-      email = _savedEmail!;
-    } else {
+    // If user wants to sign in as different user OR no saved credentials, use entered email
+    if (_showEmailField || !_hasSavedCredentials || _savedEmail == null) {
       email = _emailController.text.trim();
+    } else {
+      email = _savedEmail!;
     }
 
     if (pass.isEmpty) {
@@ -199,8 +199,9 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // Only validate email if we don't have saved credentials
-    if (!_hasSavedCredentials && (email.isEmpty || !_isValidEmail(email))) {
+    // Validate email if user wants to sign in as different user OR no saved credentials
+    if ((_showEmailField || !_hasSavedCredentials) &&
+        (email.isEmpty || !_isValidEmail(email))) {
       setState(() => _fieldError = email.isEmpty ? 'email' : 'email');
       return;
     }
@@ -288,8 +289,6 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
-
-
 
   Future<void> _authenticateWithBiometrics() async {
     setState(() => _isLoading = true);
